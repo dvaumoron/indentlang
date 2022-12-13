@@ -33,13 +33,21 @@ type Categories struct {
 	categorySet map[string]empty
 }
 
-func (c *Categories) AddCategory(category string) {
+func (c Categories) AddCategory(category string) {
 	c.categorySet[category] = empty{}
 }
 
-func (c *Categories) HasCategory(category string) bool {
+func (c Categories) HasCategory(category string) bool {
 	_, exist := c.categorySet[category]
 	return exist
+}
+
+func (c Categories) Copy() Categories {
+	categorySet := map[string]empty{}
+	for category := range c.categorySet {
+		categorySet[category] = empty{}
+	}
+	return Categories{categorySet: categorySet}
 }
 
 type Gettable interface {
@@ -66,36 +74,36 @@ type NoneType empty
 func (n NoneType) AddCategory(category string) {
 }
 
-func (c NoneType) HasCategory(category string) bool {
+func (n NoneType) HasCategory(category string) bool {
 	return false
 }
 
-func (c NoneType) WriteTo(w io.Writer) (int64, error) {
+func (n NoneType) WriteTo(w io.Writer) (int64, error) {
 	return 0, nil
 }
 
-func (c NoneType) Eval(env Environment) Object {
+func (n NoneType) Eval(env Environment) Object {
 	return None
 }
 
 var None = NoneType{}
 
 type Boolean struct {
-	Categories
+	NoneType
 	inner bool
 }
 
-func (b *Boolean) WriteTo(w io.Writer) (int64, error) {
+func (b Boolean) WriteTo(w io.Writer) (int64, error) {
 	n, err := io.WriteString(w, fmt.Sprint(b.inner))
 	return int64(n), err
 }
 
-func (b *Boolean) Eval(env Environment) Object {
+func (b Boolean) Eval(env Environment) Object {
 	return b
 }
 
-func NewBoolean(b bool) *Boolean {
-	return &Boolean{Categories: Categories{categorySet: map[string]empty{}}, inner: b}
+func makeBoolean(b bool) Boolean {
+	return Boolean{inner: b}
 }
 
 type Integer struct {
@@ -148,6 +156,50 @@ func (s *String) Eval(env Environment) Object {
 	return s
 }
 
+func (s *String) Get(key Object) Object {
+	var res Object
+	switch casted := key.(type) {
+	case *Integer:
+		index := int(casted.inner)
+		if 0 <= index && index < len(s.inner) {
+			res = &String{
+				Categories: s.Categories.Copy(),
+				inner:      s.inner[index : index+1],
+			}
+		} else {
+			res = None
+		}
+	case *List:
+		if len(casted.inner) > 1 {
+			start, success := casted.inner[0].(*Integer)
+			if success {
+				end, success := casted.inner[1].(*Integer)
+				if success {
+					startInt := int(start.inner)
+					endInt := int(end.inner)
+					if 0 <= startInt && startInt <= endInt && endInt < len(s.inner) {
+						res = &String{
+							Categories: s.Categories.Copy(),
+							inner:      s.inner[startInt:endInt],
+						}
+					} else {
+						res = None
+					}
+				} else {
+					res = None
+				}
+			} else {
+				res = None
+			}
+		} else {
+			res = None
+		}
+	default:
+		res = None
+	}
+	return res
+}
+
 func NewString(s string) *String {
 	return &String{Categories: Categories{categorySet: map[string]empty{}}, inner: s}
 }
@@ -176,12 +228,12 @@ type Iterable interface {
 }
 
 type List struct {
-	*Categories
+	Categories
 	inner []Object
 }
 
-func (l *List) Add(o Object) {
-	l.inner = append(l.inner, o)
+func (l *List) Add(value Object) {
+	l.inner = append(l.inner, value)
 }
 
 func (l *List) AddAll(it Iterable) {
@@ -197,11 +249,16 @@ func (l *List) AddAll(it Iterable) {
 	}
 }
 
-func (l *List) Get(o Object) Object {
+func (l *List) Get(key Object) Object {
 	var res Object
-	switch casted := o.(type) {
+	switch casted := key.(type) {
 	case *Integer:
-		res = l.inner[casted.inner]
+		index := int(casted.inner)
+		if 0 <= index && index < len(l.inner) {
+			res = l.inner[index]
+		} else {
+			res = None
+		}
 	case *List:
 		if len(casted.inner) > 1 {
 			start, success := casted.inner[0].(*Integer)
@@ -211,7 +268,10 @@ func (l *List) Get(o Object) Object {
 					startInt := int(start.inner)
 					endInt := int(end.inner)
 					if 0 <= startInt && startInt <= endInt && endInt < len(l.inner) {
-						res = &List{Categories: l.Categories, inner: l.inner[startInt:endInt]}
+						res = &List{
+							Categories: l.Categories.Copy(),
+							inner:      l.inner[startInt:endInt],
+						}
 					} else {
 						res = None
 					}
@@ -230,18 +290,18 @@ func (l *List) Get(o Object) Object {
 	return res
 }
 
-func (l *List) Set(k, v Object) {
-	integer, err := k.(*Integer)
-	if !err {
+func (l *List) Set(key, value Object) {
+	integer, success := key.(*Integer)
+	if success {
 		index := int(integer.inner)
 		if 0 <= index && index < len(l.inner) {
-			l.inner[index] = v
+			l.inner[index] = value
 		}
 	}
 }
 
 type ListIterator struct {
-	*Categories
+	Categories
 	receive <-chan Object
 }
 
@@ -293,16 +353,89 @@ type Function interface {
 
 func (l *List) Eval(env Environment) Object {
 	var res Object
-	if len(l.inner) == 0 {
+	if size := len(l.inner); size == 0 {
 		res = None
-	} else if f, success := l.inner[0].Eval(env).(Function); success {
-		res = f.Apply(env, l)
 	} else {
-		res = l
+		value0 := l.inner[0].Eval(env)
+		if f, success := value0.(Function); success {
+			res = f.Apply(env, l)
+		} else {
+			l2 := &List{
+				Categories: Categories{categorySet: map[string]empty{}},
+				inner:      make([]Object, 0, size),
+			}
+			l2.Add(value0)
+			for _, value := range l.inner[1:] {
+				l2.Add(value.Eval(env))
+			}
+			res = l2
+		}
 	}
 	return res
 }
 
 func NewList() *List {
-	return &List{Categories: &Categories{categorySet: map[string]empty{}}}
+	return &List{Categories: Categories{categorySet: map[string]empty{}}}
+}
+
+type BaseEnvironment struct {
+	NoneType
+	objects map[string]Object
+}
+
+func (b BaseEnvironment) Get(key Object) Object {
+	var res Object
+	str, success := key.(*String)
+	if success {
+		res = b.objects[str.inner]
+	} else {
+		res = None
+	}
+	return res
+}
+
+func (b BaseEnvironment) Set(key, value Object) {
+	str, success := key.(*String)
+	if success {
+		b.objects[str.inner] = value
+	}
+}
+
+func makeBaseEnvironment() BaseEnvironment {
+	return BaseEnvironment{objects: map[string]Object{}}
+}
+
+type LocalEnvironment struct {
+	NoneType
+	local  BaseEnvironment
+	parent Environment
+}
+
+func (l *LocalEnvironment) Get(key Object) Object {
+	res := l.local.Get(key)
+	if res == nil {
+		res = l.parent.Get(key)
+	}
+	return res
+}
+
+func (l *LocalEnvironment) Set(key, value Object) {
+	l.Set(key, value)
+}
+
+func NewLocalEnvironment(env Environment) *LocalEnvironment {
+	return &LocalEnvironment{local: makeBaseEnvironment(), parent: env}
+}
+
+type NativeFunction struct {
+	NoneType
+	inner func(Environment, *List) Object
+}
+
+func (n NativeFunction) Apply(env Environment, l *List) Object {
+	return n.inner(env, l)
+}
+
+func makeNativeFunction(f func(Environment, *List) Object) NativeFunction {
+	return NativeFunction{inner: f}
 }

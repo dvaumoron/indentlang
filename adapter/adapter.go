@@ -15,38 +15,6 @@
  * limitations under the License.
  *
  */
-package parser
+package adapter
 
-import (
-	"errors"
-	"io"
-
-	"github.com/dvaumoron/indentlang/types"
-)
-
-type Template struct {
-	env  types.Environment
-	main types.Function
-}
-
-func (*Template) Execute(w io.Writer, data any) error {
-	// TODO
-	return nil
-}
-
-func Parse(s string) (*Template, error) {
-	var err error
-	var env types.Environment
-	// TODO
-
-	var tmpl *Template
-
-	mainObject := env.Get(types.NewString("main"))
-	mainFunction, success := mainObject.(types.Function)
-	if success {
-		tmpl = &Template{env: env, main: mainFunction}
-	} else {
-		err = errors.New("The object main is not a Function.")
-	}
-	return tmpl, err
-}
+// TODO
