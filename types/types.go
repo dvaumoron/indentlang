@@ -29,38 +29,43 @@ type Categorizable interface {
 
 type empty = struct{}
 
-type Categories struct {
+type categories struct {
 	categorySet map[string]empty
 }
 
-func (c Categories) AddCategory(category string) {
+func (c categories) AddCategory(category string) {
 	c.categorySet[category] = empty{}
 }
 
-func (c Categories) HasCategory(category string) bool {
+func (c categories) HasCategory(category string) bool {
 	_, exist := c.categorySet[category]
 	return exist
 }
 
-func (c Categories) Copy() Categories {
+func (c categories) Copy() categories {
 	categorySet := map[string]empty{}
 	for category := range c.categorySet {
 		categorySet[category] = empty{}
 	}
-	return Categories{categorySet: categorySet}
+	return categories{categorySet: categorySet}
 }
 
-type Gettable interface {
-	Get(Object) Object
+func makeCategories() categories {
+	return categories{categorySet: map[string]empty{}}
 }
 
-type Settable interface {
-	Set(Object, Object)
+type Loadable interface {
+	LoadConfirm(Object) (Object, bool)
+	Load(Object) Object
+}
+
+type Storable interface {
+	Store(Object, Object)
 }
 
 type Environment interface {
-	Gettable
-	Settable
+	Loadable
+	Storable
 }
 
 type Object interface {
@@ -94,7 +99,13 @@ type Boolean struct {
 }
 
 func (b Boolean) WriteTo(w io.Writer) (int64, error) {
-	n, err := io.WriteString(w, fmt.Sprint(b.inner))
+	var str string
+	if b.inner {
+		str = "true"
+	} else {
+		str = "false"
+	}
+	n, err := io.WriteString(w, str)
 	return int64(n), err
 }
 
@@ -102,12 +113,12 @@ func (b Boolean) Eval(env Environment) Object {
 	return b
 }
 
-func makeBoolean(b bool) Boolean {
+func MakeBoolean(b bool) Boolean {
 	return Boolean{inner: b}
 }
 
 type Integer struct {
-	Categories
+	categories
 	inner int64
 }
 
@@ -121,11 +132,11 @@ func (i *Integer) Eval(env Environment) Object {
 }
 
 func NewInteger(i int64) *Integer {
-	return &Integer{Categories: Categories{categorySet: map[string]empty{}}, inner: i}
+	return &Integer{categories: makeCategories(), inner: i}
 }
 
 type Float struct {
-	Categories
+	categories
 	inner float64
 }
 
@@ -139,11 +150,11 @@ func (f *Float) Eval(env Environment) Object {
 }
 
 func NewFloat(f float64) *Float {
-	return &Float{Categories: Categories{categorySet: map[string]empty{}}, inner: f}
+	return &Float{categories: makeCategories(), inner: f}
 }
 
 type String struct {
-	Categories
+	categories
 	inner string
 }
 
@@ -156,16 +167,18 @@ func (s *String) Eval(env Environment) Object {
 	return s
 }
 
-func (s *String) Get(key Object) Object {
+func (s *String) LoadConfirm(key Object) (Object, bool) {
 	var res Object
+	exist := false
 	switch casted := key.(type) {
 	case *Integer:
 		index := int(casted.inner)
 		if 0 <= index && index < len(s.inner) {
 			res = &String{
-				Categories: s.Categories.Copy(),
+				categories: s.categories.Copy(),
 				inner:      s.inner[index : index+1],
 			}
+			exist = true
 		} else {
 			res = None
 		}
@@ -179,9 +192,10 @@ func (s *String) Get(key Object) Object {
 					endInt := int(end.inner)
 					if 0 <= startInt && startInt <= endInt && endInt < len(s.inner) {
 						res = &String{
-							Categories: s.Categories.Copy(),
+							categories: s.categories.Copy(),
 							inner:      s.inner[startInt:endInt],
 						}
+						exist = true
 					} else {
 						res = None
 					}
@@ -197,11 +211,16 @@ func (s *String) Get(key Object) Object {
 	default:
 		res = None
 	}
+	return res, exist
+}
+
+func (s *String) Load(key Object) Object {
+	res, _ := s.LoadConfirm(key)
 	return res
 }
 
 func NewString(s string) *String {
-	return &String{Categories: Categories{categorySet: map[string]empty{}}, inner: s}
+	return &String{categories: makeCategories(), inner: s}
 }
 
 type Identifer String
@@ -212,11 +231,11 @@ func (i *Identifer) WriteTo(w io.Writer) (int64, error) {
 }
 
 func (i *Identifer) Eval(env Environment) Object {
-	return env.Get((*String)(i))
+	return env.Load((*String)(i))
 }
 
 func NewIdentifier(s string) *Identifer {
-	return &Identifer{Categories: Categories{categorySet: map[string]empty{}}, inner: s}
+	return &Identifer{categories: makeCategories(), inner: s}
 }
 
 type Iterator interface {
@@ -228,7 +247,7 @@ type Iterable interface {
 }
 
 type List struct {
-	Categories
+	categories
 	inner []Object
 }
 
@@ -249,13 +268,15 @@ func (l *List) AddAll(it Iterable) {
 	}
 }
 
-func (l *List) Get(key Object) Object {
+func (l *List) LoadConfirm(key Object) (Object, bool) {
 	var res Object
+	exist := false
 	switch casted := key.(type) {
 	case *Integer:
 		index := int(casted.inner)
 		if 0 <= index && index < len(l.inner) {
 			res = l.inner[index]
+			exist = true
 		} else {
 			res = None
 		}
@@ -269,9 +290,10 @@ func (l *List) Get(key Object) Object {
 					endInt := int(end.inner)
 					if 0 <= startInt && startInt <= endInt && endInt < len(l.inner) {
 						res = &List{
-							Categories: l.Categories.Copy(),
+							categories: l.categories.Copy(),
 							inner:      l.inner[startInt:endInt],
 						}
+						exist = true
 					} else {
 						res = None
 					}
@@ -287,10 +309,15 @@ func (l *List) Get(key Object) Object {
 	default:
 		res = None
 	}
+	return res, exist
+}
+
+func (l *List) Load(key Object) Object {
+	res, _ := l.LoadConfirm(key)
 	return res
 }
 
-func (l *List) Set(key, value Object) {
+func (l *List) Store(key, value Object) {
 	integer, success := key.(*Integer)
 	if success {
 		index := int(integer.inner)
@@ -301,7 +328,7 @@ func (l *List) Set(key, value Object) {
 }
 
 type ListIterator struct {
-	Categories
+	categories
 	receive <-chan Object
 }
 
@@ -315,14 +342,14 @@ func (it *ListIterator) Next() (Object, bool) {
 }
 
 func (l *List) Iter() Iterator {
-	canal := make(chan Object)
+	channel := make(chan Object)
 	go func() {
 		for _, value := range l.inner {
-			canal <- value
+			channel <- value
 		}
-		close(canal)
+		close(channel)
 	}()
-	return &ListIterator{Categories: l.Categories, receive: canal}
+	return &ListIterator{categories: l.categories, receive: channel}
 }
 
 func WriteTo(it Iterable, w io.Writer) (int64, error) {
@@ -347,7 +374,7 @@ func (l *List) WriteTo(w io.Writer) (int64, error) {
 	return WriteTo(l, w)
 }
 
-type Function interface {
+type Appliable interface {
 	Apply(Environment, *List) Object
 }
 
@@ -357,11 +384,15 @@ func (l *List) Eval(env Environment) Object {
 		res = None
 	} else {
 		value0 := l.inner[0].Eval(env)
-		if f, success := value0.(Function); success {
-			res = f.Apply(env, l)
+		if f, success := value0.(Appliable); success {
+			l2 := &List{
+				categories: l.categories.Copy(),
+				inner:      l.inner[1:],
+			}
+			res = f.Apply(env, l2)
 		} else {
 			l2 := &List{
-				Categories: Categories{categorySet: map[string]empty{}},
+				categories: l.categories.Copy(),
 				inner:      make([]Object, 0, size),
 			}
 			l2.Add(value0)
@@ -375,7 +406,7 @@ func (l *List) Eval(env Environment) Object {
 }
 
 func NewList() *List {
-	return &List{Categories: Categories{categorySet: map[string]empty{}}}
+	return &List{categories: makeCategories()}
 }
 
 type BaseEnvironment struct {
@@ -383,25 +414,31 @@ type BaseEnvironment struct {
 	objects map[string]Object
 }
 
-func (b BaseEnvironment) Get(key Object) Object {
+func (b BaseEnvironment) LoadConfirm(key Object) (Object, bool) {
 	var res Object
+	exist := false
 	str, success := key.(*String)
 	if success {
-		res = b.objects[str.inner]
+		res, exist = b.objects[str.inner]
 	} else {
 		res = None
 	}
+	return res, exist
+}
+
+func (b BaseEnvironment) Load(key Object) Object {
+	res, _ := b.LoadConfirm(key)
 	return res
 }
 
-func (b BaseEnvironment) Set(key, value Object) {
+func (b BaseEnvironment) Store(key, value Object) {
 	str, success := key.(*String)
 	if success {
 		b.objects[str.inner] = value
 	}
 }
 
-func makeBaseEnvironment() BaseEnvironment {
+func MakeBaseEnvironment() BaseEnvironment {
 	return BaseEnvironment{objects: map[string]Object{}}
 }
 
@@ -411,31 +448,36 @@ type LocalEnvironment struct {
 	parent Environment
 }
 
-func (l *LocalEnvironment) Get(key Object) Object {
-	res := l.local.Get(key)
-	if res == nil {
-		res = l.parent.Get(key)
+func (l *LocalEnvironment) LoadConfirm(key Object) (Object, bool) {
+	res, exist := l.local.LoadConfirm(key)
+	if !exist {
+		res, exist = l.parent.LoadConfirm(key)
 	}
+	return res, exist
+}
+
+func (l *LocalEnvironment) Load(key Object) Object {
+	res, _ := l.LoadConfirm(key)
 	return res
 }
 
-func (l *LocalEnvironment) Set(key, value Object) {
-	l.Set(key, value)
+func (l *LocalEnvironment) Store(key, value Object) {
+	l.local.Store(key, value)
 }
 
 func NewLocalEnvironment(env Environment) *LocalEnvironment {
-	return &LocalEnvironment{local: makeBaseEnvironment(), parent: env}
+	return &LocalEnvironment{local: MakeBaseEnvironment(), parent: env}
 }
 
-type NativeFunction struct {
+type Native struct {
 	NoneType
 	inner func(Environment, *List) Object
 }
 
-func (n NativeFunction) Apply(env Environment, l *List) Object {
+func (n Native) Apply(env Environment, l *List) Object {
 	return n.inner(env, l)
 }
 
-func makeNativeFunction(f func(Environment, *List) Object) NativeFunction {
-	return NativeFunction{inner: f}
+func makeNative(f func(Environment, *List) Object) Native {
+	return Native{inner: f}
 }

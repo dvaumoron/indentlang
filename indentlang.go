@@ -22,7 +22,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/dvaumoron/indentlang/parser"
+	"github.com/dvaumoron/indentlang/template"
 )
 
 func main() {
@@ -37,7 +37,7 @@ func main() {
 		return
 	}
 
-	tmpl, err := parser.Parse(string(tmplBody))
+	tmpl, err := template.Parse(string(tmplBody))
 	if err != nil {
 		fmt.Println(err)
 		return

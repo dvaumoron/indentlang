@@ -17,4 +17,17 @@
  */
 package builtins
 
-// TODO
+import "github.com/dvaumoron/indentlang/types"
+
+var Builtins = initBuitins()
+
+func initBuitins() types.BaseEnvironment {
+	base := types.MakeBaseEnvironment()
+	// TODO init stuff
+	return base
+}
+
+func NewImportDirective(path string) types.Native {
+	// TODO
+	return types.Native{}
+}
