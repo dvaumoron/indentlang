@@ -22,6 +22,7 @@ import (
 )
 
 func Parse(s string) *types.List {
+	res := types.NewList()
 	// TODO parsing
-	return nil
+	return res
 }

@@ -38,31 +38,26 @@ func (t *Template) Execute(w io.Writer, data any) error {
 	return err
 }
 
-func Parse(s string) (*Template, error) {
-	return ParseFrom("", s)
+func Parse(str string) (*Template, error) {
+	return ParseFrom("", str)
 }
 
-func ParseFrom(path, s string) (*Template, error) {
-	baseEnv := builtins.Builtins
+func ParseFrom(path, str string) (*Template, error) {
+	env := types.NewLocalEnvironment(builtins.Builtins)
 	if path != "" {
-		baseEnv.Store(types.NewString("main"), builtins.NewImportDirective(path))
+		env.StoreStr("Import", builtins.MakeImportDirective(path))
 	}
-	env := types.NewLocalEnvironment(baseEnv)
 
-	parser.Parse(s).Eval(env)
+	parser.Parse(str).Eval(env)
 
 	var tmpl *Template
 	var err error
-	main, exist := env.LoadConfirm(types.NewString("main"))
-	if exist {
-		casted, success := main.(types.Appliable)
-		if success {
-			tmpl = &Template{env: env, main: casted}
-		} else {
-			err = errors.New("the object main is not an Appliable")
-		}
+	main := env.LoadStr("Main")
+	casted, success := main.(types.Appliable)
+	if success {
+		tmpl = &Template{env: env, main: casted}
 	} else {
-		err = errors.New("the object main does not exist")
+		err = errors.New("the object Main is not an Appliable")
 	}
 	return tmpl, err
 }
