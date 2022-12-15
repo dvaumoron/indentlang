@@ -22,34 +22,7 @@ import (
 	"io"
 )
 
-type empty = struct{}
-
-type categories struct {
-	categorySet map[string]empty
-}
-
-func (c categories) AddCategory(category string) {
-	c.categorySet[category] = empty{}
-}
-
-func (c categories) HasCategory(category string) bool {
-	_, exist := c.categorySet[category]
-	return exist
-}
-
-func (c categories) Copy() categories {
-	categorySet := map[string]empty{}
-	for category := range c.categorySet {
-		categorySet[category] = empty{}
-	}
-	return categories{categorySet: categorySet}
-}
-
-func makeCategories() categories {
-	return categories{categorySet: map[string]empty{}}
-}
-
-type NoneType empty
+type NoneType struct{}
 
 func (n NoneType) AddCategory(category string) {
 }
@@ -67,6 +40,31 @@ func (n NoneType) Eval(env Environment) Object {
 }
 
 var None = NoneType{}
+
+type categories struct {
+	categorySet map[string]NoneType
+}
+
+func (c categories) AddCategory(category string) {
+	c.categorySet[category] = None
+}
+
+func (c categories) HasCategory(category string) bool {
+	_, exist := c.categorySet[category]
+	return exist
+}
+
+func (c categories) Copy() categories {
+	categorySet := map[string]NoneType{}
+	for category := range c.categorySet {
+		categorySet[category] = None
+	}
+	return categories{categorySet: categorySet}
+}
+
+func makeCategories() categories {
+	return categories{categorySet: map[string]NoneType{}}
+}
 
 type Boolean struct {
 	NoneType

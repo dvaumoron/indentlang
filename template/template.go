@@ -48,15 +48,17 @@ func ParseFrom(path, str string) (*Template, error) {
 		env.StoreStr("Import", builtins.MakeImportDirective(path))
 	}
 
-	parser.Parse(str).Eval(env)
-
 	var tmpl *Template
-	var err error
-	main, success := env.LoadStr("Main").(types.Appliable)
-	if success {
-		tmpl = &Template{env: env, main: main}
-	} else {
-		err = errors.New("the object Main is not an Appliable")
+	node, err := parser.Parse(str)
+	if err == nil {
+		node.Eval(env)
+
+		main, success := env.LoadStr("Main").(types.Appliable)
+		if success {
+			tmpl = &Template{env: env, main: main}
+		} else {
+			err = errors.New("the object Main is not an Appliable")
+		}
 	}
 	return tmpl, err
 }

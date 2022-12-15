@@ -277,7 +277,13 @@ func innerImporter(basePath, totalPath string) {
 	env.StoreStr("Import", MakeImportDirective(basePath))
 	tmplData, err := os.ReadFile(totalPath)
 	if err == nil {
-		parser.Parse(string(tmplData)).Eval(env)
+		var node types.Object
+		node, err = parser.Parse(string(tmplData))
+		if err == nil {
+			node.Eval(env)
+		} else {
+			env = nil
+		}
 	} else {
 		env = nil
 	}
