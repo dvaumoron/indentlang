@@ -19,6 +19,7 @@ package parser
 
 import (
 	"errors"
+	"strconv"
 	"strings"
 
 	"github.com/dvaumoron/indentlang/types"
@@ -137,6 +138,77 @@ func init() {
 			var str *types.String
 			str, exist = arg0.(*types.String)
 			if exist {
+				if s := str.Inner; s == "True" {
+					var arg1 types.Object
+					arg1, exist = it.Next()
+					if exist {
+						var nodeList *types.List
+						nodeList, exist = arg1.(*types.List)
+						if exist {
+							nodeList.Add(types.True)
+						}
+					}
+				} else if s == "False" {
+					var arg1 types.Object
+					arg1, exist = it.Next()
+					if exist {
+						var nodeList *types.List
+						nodeList, exist = arg1.(*types.List)
+						if exist {
+							nodeList.Add(types.False)
+						}
+					}
+				}
+			}
+		}
+		return types.MakeBoolean(exist)
+	}))
+	customRules.Add(types.MakeNativeAppliable(func(env types.Environment, args *types.List) types.Object {
+		it := args.Iter()
+		arg0, exist := it.Next()
+		if exist {
+			var str *types.String
+			str, exist = arg0.(*types.String)
+			if exist {
+				s := str.Inner
+				i, err := strconv.ParseInt(s, 10, 64)
+				if err == nil {
+					var arg1 types.Object
+					arg1, exist = it.Next()
+					if exist {
+						var nodeList *types.List
+						nodeList, exist = arg1.(*types.List)
+						if exist {
+							nodeList.Add(types.NewInteger(i))
+						}
+					}
+				} else {
+					f, err := strconv.ParseFloat(s, 64)
+					if err == nil {
+						var arg1 types.Object
+						arg1, exist = it.Next()
+						if exist {
+							var nodeList *types.List
+							nodeList, exist = arg1.(*types.List)
+							if exist {
+								nodeList.Add(types.NewFloat(f))
+							}
+						}
+					} else {
+						exist = false
+					}
+				}
+			}
+		}
+		return types.MakeBoolean(exist)
+	}))
+	customRules.Add(types.MakeNativeAppliable(func(env types.Environment, args *types.List) types.Object {
+		it := args.Iter()
+		arg0, exist := it.Next()
+		if exist {
+			var str *types.String
+			str, exist = arg0.(*types.String)
+			if exist {
 				if s := str.Inner; s[0] == '"' {
 					var arg1 types.Object
 					arg1, exist = it.Next()
@@ -238,6 +310,7 @@ func handleCustomWord(word string, list *types.List) bool {
 		rule, success := object.(types.Appliable)
 		if success {
 			var boolean types.Boolean
+			// The Apply must return true if it has created the node.
 			boolean, success = rule.Apply(nil, args).(types.Boolean)
 			success = success && boolean.Inner
 		}
@@ -246,8 +319,7 @@ func handleCustomWord(word string, list *types.List) bool {
 	return res
 }
 
-// If the action func return false that break the loop,
-// and ForEach return false too.
+// If the action func return false that break the loop and ForEach return false too.
 func ForEach(it types.Iterable, action func(types.Object) bool) bool {
 	exist := true
 	it2 := it.Iter()
