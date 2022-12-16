@@ -120,7 +120,7 @@ func handleWord(words <-chan string, listStack stack[*types.List], done chan<- t
 			listStack.push(current)
 		} else if word == ")" {
 			listStack.pop()
-		} else if handleCustomWord(word, listStack) {
+		} else if handleCustomWord(word, listStack.peek()) {
 			listStack.peek().Add(types.NewIdentifier(word))
 		}
 	}
@@ -185,9 +185,40 @@ func init() {
 								} else {
 									s2 = append(s2, char)
 								}
-
 							}
 							nodeList.Add(types.NewString(string(s2)))
+						}
+					}
+				}
+			}
+		}
+		return types.MakeBoolean(exist)
+	}))
+	customRules.Add(types.MakeNativeAppliable(func(env types.Environment, args *types.List) types.Object {
+		it := args.Iter()
+		arg0, exist := it.Next()
+		if exist {
+			var str *types.String
+			str, exist = arg0.(*types.String)
+			if exist {
+				if s := str.Inner; s[0] == '@' && len(s) > 1 {
+					var arg1 types.Object
+					arg1, exist = it.Next()
+					if exist {
+						var nodeList *types.List
+						nodeList, exist = arg1.(*types.List)
+						if exist {
+							elems := strings.Split(s[1:], "=")
+							attr := types.NewList()
+							attr.AddCategory("attribute")
+							attr.Add(types.NewString(elems[0]))
+							if len(elems) > 1 {
+								elem := elems[1]
+								if handleCustomWord(elem, args) {
+									args.Add(types.NewIdentifier(elem))
+								}
+							}
+							nodeList.Add(attr)
 						}
 					}
 				}
@@ -198,10 +229,10 @@ func init() {
 }
 
 // Counter intuitive : return true when nothing have been done
-func handleCustomWord(word string, listStack stack[*types.List]) bool {
+func handleCustomWord(word string, list *types.List) bool {
 	args := types.NewList()
 	args.Add(types.NewString(word))
-	args.Add(listStack.peek())
+	args.Add(list)
 	args.Add(customRules)
 	res := !ForEach(customRules, func(object types.Object) bool {
 		rule, success := object.(types.Appliable)
