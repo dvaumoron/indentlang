@@ -90,6 +90,9 @@ func MakeBoolean(b bool) Boolean {
 	return Boolean{Inner: b}
 }
 
+var True = Boolean{Inner: true}
+var False = Boolean{Inner: false}
+
 type Integer struct {
 	categories
 	Inner int64

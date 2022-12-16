@@ -18,9 +18,6 @@
 package builtins
 
 import (
-	"os"
-	"sync"
-
 	"github.com/dvaumoron/indentlang/parser"
 	"github.com/dvaumoron/indentlang/types"
 )
@@ -157,18 +154,19 @@ func CreateHtmlElement(name string) types.NativeAppliable {
 		local := types.NewLocalEnvironment(env)
 		attrs := types.NewList()
 		childs := types.NewList()
-		forEach(args, func(value types.Object) {
+		parser.ForEach(args, func(value types.Object) bool {
 			value = value.Eval(local)
 			if value.HasCategory("attribute") {
 				attrs.Add(value)
 			} else {
 				childs.Add(value)
 			}
+			return true
 		})
 		res := types.NewList()
 		res.Add(openElement)
 		res.Add(wrappedName)
-		forEach(attrs, func(value types.Object) {
+		parser.ForEach(attrs, func(value types.Object) bool {
 			attr, success := value.(types.Iterable)
 			if success {
 				itAttr := attr.Iter()
@@ -184,14 +182,16 @@ func CreateHtmlElement(name string) types.NativeAppliable {
 					}
 				}
 			}
+			return true
 		})
 		if childs.SizeInt() == 0 {
 			res.Add(closeOpenElement)
 		} else {
 			res.Add(closeElement)
-			forEach(childs, func(value types.Object) {
+			parser.ForEach(childs, func(value types.Object) bool {
 				res.Add(space)
 				res.Add(value)
+				return true
 			})
 			res.Add(openCloseElement)
 			res.Add(wrappedName)
@@ -199,125 +199,4 @@ func CreateHtmlElement(name string) types.NativeAppliable {
 		}
 		return res
 	})
-}
-
-func forEach(it types.Iterable, action func(types.Object)) {
-	it2 := it.Iter()
-	for {
-		value, exist := it2.Next()
-		if !exist {
-			break
-		}
-		action(value)
-	}
-}
-
-type importRequest struct {
-	basePath  string
-	filePath  string
-	responder chan<- types.Environment
-}
-
-var requestToImporter chan<- importRequest
-
-type importResponse struct {
-	path string
-	env  types.Environment
-}
-
-var responseToImporter chan<- importResponse
-
-func init() {
-	importChannel := make(chan importRequest)
-	importChannel2 := make(chan importResponse)
-	go importer(importChannel, importChannel2)
-	requestToImporter = importChannel
-	responseToImporter = importChannel2
-}
-
-type moduleCacheValue struct {
-	env     types.Environment
-	waiting []chan<- types.Environment
-}
-
-var moduleCache = map[string]moduleCacheValue{}
-
-func importer(requestReceiver <-chan importRequest, responseReceiver <-chan importResponse) {
-	for {
-		select {
-		case request := <-requestReceiver:
-			basePath := request.basePath
-			totalPath := basePath + request.filePath
-			value := moduleCache[totalPath]
-			if env := value.env; env == nil {
-				list := value.waiting
-				if len(list) == 0 {
-					// import non existing
-					go innerImporter(basePath, totalPath)
-				}
-				value.waiting = append(list, request.responder)
-				moduleCache[totalPath] = value
-			} else {
-				request.responder <- env
-			}
-		case response := <-responseReceiver:
-			path := response.path
-			env := response.env
-			for _, responder := range moduleCache[path].waiting {
-				responder <- env
-			}
-			// save the computed env & reset the list of waiting
-			moduleCache[path] = moduleCacheValue{env: env}
-		}
-	}
-}
-
-func innerImporter(basePath, totalPath string) {
-	env := types.NewLocalEnvironment(Builtins)
-	env.StoreStr("Import", MakeImportDirective(basePath))
-	tmplData, err := os.ReadFile(totalPath)
-	if err == nil {
-		var node types.Object
-		node, err = parser.Parse(string(tmplData))
-		if err == nil {
-			node.Eval(env)
-		} else {
-			env = nil
-		}
-	} else {
-		env = nil
-	}
-	responseToImporter <- importResponse{path: totalPath, env: env}
-}
-
-var directiveMutex sync.RWMutex
-var directiveCache = map[string]types.NativeAppliable{}
-
-func MakeImportDirective(basePath string) types.NativeAppliable {
-	directiveMutex.RLock()
-	res, exist := directiveCache[basePath]
-	directiveMutex.RUnlock()
-	if !exist {
-		directiveMutex.Lock()
-		res, exist = directiveCache[basePath]
-		if !exist {
-			res = types.MakeNativeAppliable(func(env types.Environment, l *types.List) types.Object {
-				filePath, success := l.Load(types.NewInteger(0)).(*types.String)
-				if success {
-					response := make(chan types.Environment)
-					requestToImporter <- importRequest{
-						basePath: basePath, filePath: filePath.Inner, responder: response,
-					}
-					otherEnv := <-response
-					if otherEnv != nil {
-						otherEnv.CopyTo(env)
-					}
-				}
-				return types.None
-			})
-			directiveCache[basePath] = res
-		}
-		directiveMutex.Unlock()
-	}
-	return res
 }

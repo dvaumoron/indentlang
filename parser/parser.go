@@ -120,21 +120,118 @@ func handleWord(words <-chan string, listStack stack[*types.List], done chan<- t
 			listStack.push(current)
 		} else if word == ")" {
 			listStack.pop()
-		} else if !handleCustomWord(word, listStack) {
+		} else if handleCustomWord(word, listStack) {
 			listStack.peek().Add(types.NewIdentifier(word))
 		}
 	}
 	done <- types.None
 }
 
-var customRules []types.Appliable
+var customRules = types.NewList()
 
+func init() {
+	customRules.Add(types.MakeNativeAppliable(func(env types.Environment, args *types.List) types.Object {
+		it := args.Iter()
+		arg0, exist := it.Next()
+		if exist {
+			var str *types.String
+			str, exist = arg0.(*types.String)
+			if exist {
+				if s := str.Inner; s[0] == '"' {
+					var arg1 types.Object
+					arg1, exist = it.Next()
+					if exist {
+						var nodeList *types.List
+						nodeList, exist = arg1.(*types.List)
+						if exist {
+							s = strings.ReplaceAll(s[1:len(s)-1], "\\'", "'")
+							nodeList.Add(types.NewString(s))
+						}
+					}
+				}
+			}
+		}
+		return types.MakeBoolean(exist)
+	}))
+	customRules.Add(types.MakeNativeAppliable(func(env types.Environment, args *types.List) types.Object {
+		it := args.Iter()
+		arg0, exist := it.Next()
+		if exist {
+			var str *types.String
+			str, exist = arg0.(*types.String)
+			if exist {
+				if s := str.Inner; s[0] == '\'' {
+					var arg1 types.Object
+					arg1, exist = it.Next()
+					if exist {
+						var nodeList *types.List
+						nodeList, exist = arg1.(*types.List)
+						if exist {
+							skipApos := false
+							size := len(s)
+							s2 := make([]rune, 0, size)
+							for _, char := range s[1 : size-1] {
+								if skipApos {
+									skipApos = false
+									if char == '\'' {
+										s2 = append(s2, char)
+									} else {
+										s2 = append(s2, '\\', char)
+									}
+								} else if char == '"' {
+									s2 = append(s2, '\\', char)
+								} else if char == '\\' {
+									skipApos = true
+								} else {
+									s2 = append(s2, char)
+								}
+
+							}
+							nodeList.Add(types.NewString(string(s2)))
+						}
+					}
+				}
+			}
+		}
+		return types.MakeBoolean(exist)
+	}))
+}
+
+// Counter intuitive : return true when nothing have been done
 func handleCustomWord(word string, listStack stack[*types.List]) bool {
-	res := false
-	for _, rule := range customRules {
-		// TODO
-	}
+	args := types.NewList()
+	args.Add(types.NewString(word))
+	args.Add(listStack.peek())
+	args.Add(customRules)
+	res := !ForEach(customRules, func(object types.Object) bool {
+		rule, success := object.(types.Appliable)
+		if success {
+			var boolean types.Boolean
+			boolean, success = rule.Apply(nil, args).(types.Boolean)
+			success = success && boolean.Inner
+		}
+		return !success
+	})
 	return res
+}
+
+// If the action func return false that break the loop,
+// and ForEach return false too.
+func ForEach(it types.Iterable, action func(types.Object) bool) bool {
+	exist := true
+	it2 := it.Iter()
+	for {
+		var value types.Object
+		value, exist = it2.Next()
+		if !exist {
+			break
+		}
+		exist = action(value)
+		if !exist {
+			break
+		}
+	}
+	return exist
 }
 
 func sendChar(chars chan<- rune, line string) {

@@ -100,7 +100,7 @@ func (l *List) SizeInt() int {
 
 type ListIterator struct {
 	categories
-	receive <-chan Object
+	receiver <-chan Object
 }
 
 func (it *ListIterator) Iter() Iterator {
@@ -108,21 +108,24 @@ func (it *ListIterator) Iter() Iterator {
 }
 
 func (it *ListIterator) Next() (Object, bool) {
-	value, exist := <-it.receive
+	value, exist := <-it.receiver
+	if !exist {
+		value = None
+	}
 	return value, exist
 }
 
 func (l *List) Iter() Iterator {
 	channel := make(chan Object)
 	go sendListValue(l.inner, channel)
-	return &ListIterator{categories: l.categories, receive: channel}
+	return &ListIterator{categories: l.categories, receiver: channel}
 }
 
-func sendListValue(objects []Object, emit chan<- Object) {
+func sendListValue(objects []Object, transmitter chan<- Object) {
 	for _, value := range objects {
-		emit <- value
+		transmitter <- value
 	}
-	close(emit)
+	close(transmitter)
 }
 
 func WriteTo(it Iterable, w io.Writer) (int64, error) {
