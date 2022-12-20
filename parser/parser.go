@@ -52,8 +52,9 @@ func Parse(str string) (*types.List, error) {
 	res.Add(types.NewIdentifier("List"))
 	listStack.push(res)
 	lines := strings.Split(str, "\n")
+LineLoop:
 	for _, line := range lines {
-		if strings.TrimSpace(line) != "" {
+		if trimmed := strings.TrimSpace(line); trimmed != "" && trimmed[0] != '#' {
 			var index int
 			var char rune
 			for index, char = range line {
@@ -101,6 +102,8 @@ func Parse(str string) (*types.List, error) {
 					if err != nil {
 						return nil, err
 					}
+				case '#':
+					break LineLoop
 				default:
 					buildingWord = append(buildingWord, char)
 				}
@@ -138,7 +141,7 @@ func init() {
 			var str *types.String
 			str, exist = arg0.(*types.String)
 			if exist {
-				if s := str.Inner; s == "True" {
+				if s := str.Inner; s == "true" {
 					var arg1 types.Object
 					arg1, exist = it.Next()
 					if exist {
@@ -148,7 +151,7 @@ func init() {
 							nodeList.Add(types.True)
 						}
 					}
-				} else if s == "False" {
+				} else if s == "false" {
 					var arg1 types.Object
 					arg1, exist = it.Next()
 					if exist {
@@ -180,9 +183,11 @@ func init() {
 						if exist {
 							nodeList2 := types.NewList()
 							nodeList.Add(nodeList2)
-							nodeList2.Add(types.NewIdentifier("list"))
+							nodeList2.Add(types.NewIdentifier("List"))
 							for _, elem := range strings.Split(s, ":") {
-								if handleCustomWord(elem, nodeList2) {
+								if elem == "" {
+									nodeList2.Add(types.None)
+								} else if handleCustomWord(elem, nodeList2) {
 									nodeList2.Add(types.NewIdentifier(elem))
 								}
 							}
