@@ -171,6 +171,36 @@ func init() {
 			str, exist = arg0.(*types.String)
 			if exist {
 				s := str.Inner
+				if s != ":=" && strings.Contains(s, ":") {
+					var arg1 types.Object
+					arg1, exist = it.Next()
+					if exist {
+						var nodeList *types.List
+						nodeList, exist = arg1.(*types.List)
+						if exist {
+							nodeList2 := types.NewList()
+							nodeList.Add(nodeList2)
+							nodeList2.Add(types.NewIdentifier("list"))
+							for _, elem := range strings.Split(s, ":") {
+								if handleCustomWord(elem, nodeList2) {
+									nodeList2.Add(types.NewIdentifier(elem))
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		return types.MakeBoolean(exist)
+	}))
+	customRules.Add(types.MakeNativeAppliable(func(env types.Environment, args *types.List) types.Object {
+		it := args.Iter()
+		arg0, exist := it.Next()
+		if exist {
+			var str *types.String
+			str, exist = arg0.(*types.String)
+			if exist {
+				s := str.Inner
 				i, err := strconv.ParseInt(s, 10, 64)
 				if err == nil {
 					var arg1 types.Object
