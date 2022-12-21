@@ -191,15 +191,15 @@ func initBuitins() types.BaseEnvironment {
 					case *types.List:
 						ids := make([]string, 0, casted.SizeInt())
 						parser.ForEach(casted, func(id types.Object) bool {
-							id2, success3 := id.(*types.Identifer)
-							if success3 {
+							id2, success := id.(*types.Identifer)
+							if success {
 								ids = append(ids, id2.Inner)
 							}
 							return true
 						})
 						parser.ForEach(it2, func(value types.Object) bool {
-							it3, success2 := value.(types.Iterable)
-							if success2 {
+							it3, success := value.(types.Iterable)
+							if success {
 								it4 := it3.Iter()
 								for _, id := range ids {
 									value2, _ := it4.Next()
@@ -210,7 +210,7 @@ func initBuitins() types.BaseEnvironment {
 									return true
 								})
 							}
-							return success2
+							return success
 						})
 					}
 				}
