@@ -25,6 +25,8 @@ import (
 	"github.com/dvaumoron/indentlang/types"
 )
 
+const AttributeName = "attribute"
+
 type stack[T any] struct {
 	inner []T
 }
@@ -317,7 +319,7 @@ func init() {
 						if exist {
 							elems := strings.Split(s[1:], "=")
 							attr := types.NewList()
-							attr.AddCategory("attribute")
+							attr.AddCategory(AttributeName)
 							attr.Add(types.NewString(elems[0]))
 							if len(elems) > 1 {
 								elem := elems[1]

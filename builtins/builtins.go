@@ -25,8 +25,15 @@ import (
 var Builtins = initBuitins()
 
 func initBuitins() types.BaseEnvironment {
+	elementHtml := CreateHtmlElement("html")
+
 	base := types.MakeBaseEnvironment()
-	// TODO html special case
+	base.StoreStr("html", types.MakeNativeAppliable(func(env types.Environment, args *types.List) types.Object {
+		env.StoreStr("Main", types.MakeNativeAppliable(func(callEnv types.Environment, emptyArgs *types.List) types.Object {
+			return elementHtml.Apply(callEnv, args)
+		}))
+		return types.None
+	}))
 	addHtmlElement(base, "a")
 	addHtmlElement(base, "abbr")
 	addHtmlElement(base, "address")
@@ -156,7 +163,7 @@ func CreateHtmlElement(name string) types.NativeAppliable {
 		childs := types.NewList()
 		parser.ForEach(args, func(value types.Object) bool {
 			value = value.Eval(local)
-			if value.HasCategory("attribute") {
+			if value.HasCategory(parser.AttributeName) {
 				attrs.Add(value)
 			} else {
 				childs.Add(value)
