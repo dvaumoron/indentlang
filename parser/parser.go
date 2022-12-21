@@ -26,6 +26,9 @@ import (
 )
 
 const AttributeName = "attribute"
+const ListName = "List"
+
+var ListId = types.NewIdentifier(ListName)
 
 type stack[T any] struct {
 	inner []T
@@ -51,7 +54,7 @@ func Parse(str string) (*types.List, error) {
 	indentStack.push(0)
 	var listStack stack[*types.List]
 	res := types.NewList()
-	res.Add(types.NewIdentifier("List"))
+	res.Add(ListId)
 	listStack.push(res)
 	lines := strings.Split(str, "\n")
 LineLoop:
@@ -185,7 +188,7 @@ func init() {
 						if exist {
 							nodeList2 := types.NewList()
 							nodeList.Add(nodeList2)
-							nodeList2.Add(types.NewIdentifier("List"))
+							nodeList2.Add(ListId)
 							for _, elem := range strings.Split(s, ":") {
 								if elem == "" {
 									nodeList2.Add(types.None)

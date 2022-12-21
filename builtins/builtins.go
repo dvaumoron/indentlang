@@ -168,7 +168,54 @@ func initBuitins() types.BaseEnvironment {
 	}))
 	base.StoreStr("For", types.MakeNativeAppliable(func(env types.Environment, args *types.List) types.Object {
 		res := types.NewList()
-		// TODO
+		it := args.Iter()
+		arg0, exist := it.Next()
+		if exist {
+			arg1, exist2 := it.Next()
+			if exist2 {
+				it2, success := arg1.(types.Iterable)
+				if success {
+					bloc := types.NewList()
+					bloc.AddAll(it)
+					switch casted := arg0.(type) {
+					case *types.Identifer:
+						id := casted.Inner
+						parser.ForEach(it2, func(value types.Object) bool {
+							env.StoreStr(id, value)
+							parser.ForEach(bloc, func(line types.Object) bool {
+								res.Add(line.Eval(env))
+								return true
+							})
+							return true
+						})
+					case *types.List:
+						ids := make([]string, 0, casted.SizeInt())
+						parser.ForEach(casted, func(id types.Object) bool {
+							id2, success3 := id.(*types.Identifer)
+							if success3 {
+								ids = append(ids, id2.Inner)
+							}
+							return true
+						})
+						parser.ForEach(it2, func(value types.Object) bool {
+							it3, success2 := value.(types.Iterable)
+							if success2 {
+								it4 := it3.Iter()
+								for _, id := range ids {
+									value2, _ := it4.Next()
+									env.StoreStr(id, value2)
+								}
+								parser.ForEach(bloc, func(line types.Object) bool {
+									res.Add(line.Eval(env))
+									return true
+								})
+							}
+							return success2
+						})
+					}
+				}
+			}
+		}
 		return res
 	}))
 	// TODO init stuff
