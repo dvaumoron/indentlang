@@ -28,12 +28,15 @@ func initBuitins() types.BaseEnvironment {
 	elementHtml := CreateHtmlElement("html")
 
 	base := types.MakeBaseEnvironment()
+	// special case in order to create Main,
+	// which will be called by the Execute method of the Template struct
 	base.StoreStr("html", types.MakeNativeAppliable(func(env types.Environment, args *types.List) types.Object {
 		env.StoreStr("Main", types.MakeNativeAppliable(func(callEnv types.Environment, emptyArgs *types.List) types.Object {
 			return elementHtml.Apply(callEnv, args)
 		}))
 		return types.None
 	}))
+	// all other not deprecated html element
 	addHtmlElement(base, "a")
 	addHtmlElement(base, "abbr")
 	addHtmlElement(base, "address")
@@ -139,6 +142,35 @@ func initBuitins() types.BaseEnvironment {
 	addHtmlElement(base, "var")
 	addHtmlElement(base, "video")
 	addHtmlElement(base, "wbr")
+
+	// true langage features
+	base.StoreStr("If", types.MakeNativeAppliable(func(env types.Environment, args *types.List) types.Object {
+		it := args.Iter()
+		res, exist := it.Next()
+		if exist {
+			var test types.Boolean
+			test, exist = res.Eval(env).(types.Boolean)
+			if exist {
+				arg1, exist := it.Next()
+				if exist {
+					if test.Inner {
+						res = arg1.Eval(env)
+					} else {
+						arg2, exist := it.Next()
+						if exist {
+							res = arg2.Eval(env)
+						}
+					}
+				}
+			}
+		}
+		return res
+	}))
+	base.StoreStr("For", types.MakeNativeAppliable(func(env types.Environment, args *types.List) types.Object {
+		res := types.NewList()
+		// TODO
+		return res
+	}))
 	// TODO init stuff
 	return base
 }

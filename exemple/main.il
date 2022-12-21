@@ -8,18 +8,18 @@ html
     body
         header
             h1 PageTitle
-            if LoginUrl
+            If LoginUrl
                 p
-                    if Login (Welcome "&nbsp;" Login "&nbsp;")
+                    If Login (Welcome "&nbsp;" Login "&nbsp;")
                     a @href=LoginUrl LoginLinkName
-            if ErrorMsg
+            If ErrorMsg
                 div @class="error" ErrorMsg
             p
-                for page Ariane
+                For page Ariane
                     := url (. page Url)
                     "/&nbsp;" (a @href=url (. page Name)) "&nbsp;"
             ul
-                for page SubPages
+                For page SubPages
                     := url (. page Url)
                     li (a @href=url (. page Name))
         main
