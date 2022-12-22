@@ -44,7 +44,7 @@ func Parse(str string) (*Template, error) {
 func ParseFrom(path, str string) (*Template, error) {
 	env := types.NewLocalEnvironment(builtins.Builtins)
 	if path != "" {
-		env.StoreStr("Import", builtins.MakeImportDirective(path))
+		env.StoreStr(builtins.ImportName, builtins.MakeImportDirective(path))
 	}
 
 	var tmpl *Template
@@ -52,7 +52,7 @@ func ParseFrom(path, str string) (*Template, error) {
 	if err == nil {
 		node.Eval(env)
 
-		main, success := env.LoadStr("Main").(types.Appliable)
+		main, success := env.LoadStr(builtins.MainName).(types.Appliable)
 		if success {
 			tmpl = &Template{env: env, main: main}
 		} else {

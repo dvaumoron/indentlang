@@ -32,10 +32,14 @@ type Storable interface {
 	Store(Object, Object)
 }
 
+type StringLoadable interface {
+	LoadStr(string) Object
+}
+
 type Environment interface {
 	Storable
 	Delete(Object)
-	LoadStr(string) Object
+	StringLoadable
 	StoreStr(string, Object)
 	DeleteStr(string)
 	CopyTo(Environment)
@@ -45,6 +49,11 @@ type Object interface {
 	Categorizable
 	io.WriterTo
 	Eval(Environment) Object
+}
+
+type Addable interface {
+	Add(Object)
+	AddAll(Iterable)
 }
 
 type Sizable interface {

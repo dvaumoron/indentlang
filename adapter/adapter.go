@@ -23,6 +23,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/dvaumoron/indentlang/builtins"
 	"github.com/dvaumoron/indentlang/template"
 	"github.com/gin-gonic/gin/render"
 )
@@ -64,9 +65,7 @@ func (r IndentlangHTMLRender) Instance(name string, data any) render.Render {
 
 // Use this method to init the HTMLRender in a gin Engine.
 func LoadTemplates(templatesPath string) IndentlangHTMLRender {
-	if templatesPath[len(templatesPath)-1] != '/' {
-		templatesPath += "/"
-	}
+	templatesPath = builtins.CheckPath(templatesPath)
 
 	templates := map[string]*template.Template{}
 	inSize := len(templatesPath)

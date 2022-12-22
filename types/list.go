@@ -28,15 +28,25 @@ func (l *List) Add(value Object) {
 	l.inner = append(l.inner, value)
 }
 
-func (l *List) AddAll(it Iterable) {
+// If the action func return false that break the loop and ForEach return false too.
+func ForEach(it Iterable, action func(Object) bool) bool {
+	exist := true
 	it2 := it.Iter()
-	for {
-		value, exist := it2.Next()
-		if !exist {
-			break
+	for exist {
+		var value Object
+		value, exist = it2.Next()
+		if exist {
+			exist = action(value)
 		}
-		l.Add(value)
 	}
+	return exist
+}
+
+func (l *List) AddAll(it Iterable) {
+	ForEach(it, func(value Object) bool {
+		l.Add(value)
+		return true
+	})
 }
 
 func (l *List) Load(key Object) Object {

@@ -356,7 +356,7 @@ func handleCustomWord(word string, list *types.List) bool {
 	args.Add(types.NewString(word))
 	args.Add(list)
 	args.Add(customRules)
-	res := !ForEach(customRules, func(object types.Object) bool {
+	res := !types.ForEach(customRules, func(object types.Object) bool {
 		rule, success := object.(types.Appliable)
 		if success {
 			var boolean types.Boolean
@@ -367,24 +367,6 @@ func handleCustomWord(word string, list *types.List) bool {
 		return !success
 	})
 	return res
-}
-
-// If the action func return false that break the loop and ForEach return false too.
-func ForEach(it types.Iterable, action func(types.Object) bool) bool {
-	exist := true
-	it2 := it.Iter()
-	for {
-		var value types.Object
-		value, exist = it2.Next()
-		if !exist {
-			break
-		}
-		exist = action(value)
-		if !exist {
-			break
-		}
-	}
-	return exist
 }
 
 func sendChar(chars chan<- rune, line string) {

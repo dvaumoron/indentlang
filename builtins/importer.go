@@ -85,9 +85,11 @@ func importer(requestReceiver <-chan importRequest, responseReceiver <-chan impo
 	}
 }
 
+const ImportName = "Import"
+
 func innerImporter(basePath, totalPath string) {
 	env := types.NewLocalEnvironment(Builtins)
-	env.StoreStr("Import", MakeImportDirective(basePath))
+	env.StoreStr(ImportName, MakeImportDirective(basePath))
 	tmplData, err := os.ReadFile(totalPath)
 	if err == nil {
 		var node types.Object
@@ -107,6 +109,7 @@ var directiveMutex sync.RWMutex
 var directiveCache = map[string]types.NativeAppliable{}
 
 func MakeImportDirective(basePath string) types.NativeAppliable {
+	basePath = CheckPath(basePath)
 	directiveMutex.RLock()
 	res, exist := directiveCache[basePath]
 	directiveMutex.RUnlock()
@@ -133,4 +136,11 @@ func MakeImportDirective(basePath string) types.NativeAppliable {
 		directiveMutex.Unlock()
 	}
 	return res
+}
+
+func CheckPath(path string) string {
+	if path[len(path)-1] != '/' {
+		path += "/"
+	}
+	return path
 }

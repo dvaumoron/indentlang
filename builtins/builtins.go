@@ -22,6 +22,8 @@ import (
 	"github.com/dvaumoron/indentlang/types"
 )
 
+const MainName = "Main"
+
 var Builtins = initBuitins()
 
 func initBuitins() types.BaseEnvironment {
@@ -31,7 +33,7 @@ func initBuitins() types.BaseEnvironment {
 	// special case in order to create Main,
 	// which will be called by the Execute method of the Template struct
 	base.StoreStr("html", types.MakeNativeAppliable(func(env types.Environment, args *types.List) types.Object {
-		env.StoreStr("Main", types.MakeNativeAppliable(func(callEnv types.Environment, emptyArgs *types.List) types.Object {
+		env.StoreStr(MainName, types.MakeNativeAppliable(func(callEnv types.Environment, emptyArgs *types.List) types.Object {
 			return elementHtml.Apply(callEnv, args)
 		}))
 		return types.None
@@ -180,9 +182,9 @@ func initBuitins() types.BaseEnvironment {
 					switch casted := arg0.(type) {
 					case *types.Identifer:
 						id := casted.Inner
-						parser.ForEach(it2, func(value types.Object) bool {
+						types.ForEach(it2, func(value types.Object) bool {
 							env.StoreStr(id, value)
-							parser.ForEach(bloc, func(line types.Object) bool {
+							types.ForEach(bloc, func(line types.Object) bool {
 								res.Add(line.Eval(env))
 								return true
 							})
@@ -190,14 +192,14 @@ func initBuitins() types.BaseEnvironment {
 						})
 					case *types.List:
 						ids := make([]string, 0, casted.SizeInt())
-						parser.ForEach(casted, func(id types.Object) bool {
+						types.ForEach(casted, func(id types.Object) bool {
 							id2, success := id.(*types.Identifer)
 							if success {
 								ids = append(ids, id2.Inner)
 							}
 							return true
 						})
-						parser.ForEach(it2, func(value types.Object) bool {
+						types.ForEach(it2, func(value types.Object) bool {
 							it3, success := value.(types.Iterable)
 							if success {
 								it4 := it3.Iter()
@@ -205,7 +207,7 @@ func initBuitins() types.BaseEnvironment {
 									value2, _ := it4.Next()
 									env.StoreStr(id, value2)
 								}
-								parser.ForEach(bloc, func(line types.Object) bool {
+								types.ForEach(bloc, func(line types.Object) bool {
 									res.Add(line.Eval(env))
 									return true
 								})
@@ -231,7 +233,7 @@ func initBuitins() types.BaseEnvironment {
 					it2, success := arg1.Eval(env).(types.Iterable)
 					if success {
 						it3 := it2.Iter()
-						parser.ForEach(casted, func(id types.Object) bool {
+						types.ForEach(casted, func(id types.Object) bool {
 							id2, success := id.(*types.Identifer)
 							if success {
 								value, _ := it3.Next()
@@ -267,7 +269,7 @@ func CreateHtmlElement(name string) types.NativeAppliable {
 		local := types.NewLocalEnvironment(env)
 		attrs := types.NewList()
 		childs := types.NewList()
-		parser.ForEach(args, func(value types.Object) bool {
+		types.ForEach(args, func(value types.Object) bool {
 			value = value.Eval(local)
 			if value.HasCategory(parser.AttributeName) {
 				attrs.Add(value)
@@ -279,7 +281,7 @@ func CreateHtmlElement(name string) types.NativeAppliable {
 		res := types.NewList()
 		res.Add(openElement)
 		res.Add(wrappedName)
-		parser.ForEach(attrs, func(value types.Object) bool {
+		types.ForEach(attrs, func(value types.Object) bool {
 			attr, success := value.(types.Iterable)
 			if success {
 				itAttr := attr.Iter()
@@ -301,7 +303,7 @@ func CreateHtmlElement(name string) types.NativeAppliable {
 			res.Add(closeOpenElement)
 		} else {
 			res.Add(closeElement)
-			parser.ForEach(childs, func(value types.Object) bool {
+			types.ForEach(childs, func(value types.Object) bool {
 				res.Add(space)
 				res.Add(value)
 				return true
