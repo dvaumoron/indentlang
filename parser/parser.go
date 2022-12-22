@@ -166,6 +166,16 @@ func init() {
 							nodeList.Add(types.False)
 						}
 					}
+				} else if s == "None" {
+					var arg1 types.Object
+					arg1, exist = it.Next()
+					if exist {
+						var nodeList *types.List
+						nodeList, exist = arg1.(*types.List)
+						if exist {
+							nodeList.Add(types.None)
+						}
+					}
 				}
 			}
 		}
@@ -326,8 +336,8 @@ func init() {
 							attr.Add(types.NewString(elems[0]))
 							if len(elems) > 1 {
 								elem := elems[1]
-								if handleCustomWord(elem, args) {
-									args.Add(types.NewIdentifier(elem))
+								if handleCustomWord(elem, attr) {
+									attr.Add(types.NewIdentifier(elem))
 								}
 							}
 							nodeList.Add(attr)

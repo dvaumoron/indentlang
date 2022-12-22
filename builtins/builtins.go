@@ -218,6 +218,33 @@ func initBuitins() types.BaseEnvironment {
 		}
 		return res
 	}))
+	base.StoreStr(":=", types.MakeNativeAppliable(func(env types.Environment, args *types.List) types.Object {
+		it := args.Iter()
+		arg0, exist := it.Next()
+		if exist {
+			arg1, exist2 := it.Next()
+			if exist2 {
+				switch casted := arg0.(type) {
+				case *types.Identifer:
+					env.StoreStr(casted.Inner, arg1.Eval(env))
+				case *types.List:
+					it2, success := arg1.Eval(env).(types.Iterable)
+					if success {
+						it3 := it2.Iter()
+						parser.ForEach(casted, func(id types.Object) bool {
+							id2, success := id.(*types.Identifer)
+							if success {
+								value, _ := it3.Next()
+								env.StoreStr(id2.Inner, value)
+							}
+							return true
+						})
+					}
+				}
+			}
+		}
+		return types.None
+	}))
 	// TODO init stuff
 	return base
 }
