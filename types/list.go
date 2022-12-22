@@ -63,9 +63,9 @@ func (l *List) Load(key Object) Object {
 		if args := casted.inner; len(args) > 1 {
 			start, success := args[0].(*Integer)
 			if success {
+				startInt := int(start.Inner)
 				end, success := args[1].(*Integer)
 				if success {
-					startInt := int(start.Inner)
 					endInt := int(end.Inner)
 					if 0 <= startInt && startInt <= endInt && endInt < len(l.inner) {
 						res = &List{
@@ -76,13 +76,33 @@ func (l *List) Load(key Object) Object {
 						res = None
 					}
 				} else {
-					res = None
+					if 0 <= startInt && startInt < len(l.inner) {
+						res = &List{
+							categories: l.categories.Copy(),
+							inner:      l.inner[startInt:],
+						}
+					} else {
+						res = None
+					}
 				}
 			} else {
-				res = None
+				end, success := args[1].(*Integer)
+				if success {
+					endInt := int(end.Inner)
+					if 0 <= endInt && endInt < len(l.inner) {
+						res = &List{
+							categories: l.categories.Copy(),
+							inner:      l.inner[:endInt],
+						}
+					} else {
+						res = None
+					}
+				} else {
+					res = l
+				}
 			}
 		} else {
-			res = None
+			res = l
 		}
 	default:
 		res = None

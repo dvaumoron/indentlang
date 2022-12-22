@@ -157,12 +157,12 @@ func (s *String) Load(key Object) Object {
 			res = None
 		}
 	case *List:
-		if len(casted.inner) > 1 {
-			start, success := casted.inner[0].(*Integer)
+		if args := casted.inner; len(args) > 1 {
+			start, success := args[0].(*Integer)
 			if success {
-				end, success := casted.inner[1].(*Integer)
+				startInt := int(start.Inner)
+				end, success := args[1].(*Integer)
 				if success {
-					startInt := int(start.Inner)
 					endInt := int(end.Inner)
 					if 0 <= startInt && startInt <= endInt && endInt < len(s.Inner) {
 						res = &String{
@@ -173,13 +173,33 @@ func (s *String) Load(key Object) Object {
 						res = None
 					}
 				} else {
-					res = None
+					if 0 <= startInt && startInt < len(s.Inner) {
+						res = &String{
+							categories: s.categories.Copy(),
+							Inner:      s.Inner[startInt:],
+						}
+					} else {
+						res = None
+					}
 				}
 			} else {
-				res = None
+				end, success := args[1].(*Integer)
+				if success {
+					endInt := int(end.Inner)
+					if 0 <= endInt && endInt < len(s.Inner) {
+						res = &String{
+							categories: s.categories.Copy(),
+							Inner:      s.Inner[:endInt],
+						}
+					} else {
+						res = None
+					}
+				} else {
+					res = s
+				}
 			}
 		} else {
-			res = None
+			res = s
 		}
 	default:
 		res = None

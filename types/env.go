@@ -17,9 +17,7 @@
  */
 package types
 
-import (
-	"reflect"
-)
+import "reflect"
 
 type BaseEnvironment struct {
 	NoneType
