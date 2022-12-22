@@ -20,75 +20,72 @@ package builtins
 import "github.com/dvaumoron/indentlang/types"
 
 func ifForm(env types.Environment, args *types.List) types.Object {
-	it := args.Iter()
-	res, exist := it.Next()
-	if exist {
-		var test types.Boolean
-		test, exist = res.Eval(env).(types.Boolean)
-		if exist {
-			arg1, exist := it.Next()
-			if exist {
-				if test.Inner {
-					res = arg1.Eval(env)
-				} else {
-					arg2, exist := it.Next()
-					if exist {
-						res = arg2.Eval(env)
-					}
+	var res types.Object = types.None
+	if args.SizeInt() > 1 {
+		it := args.Iter()
+		arg0, _ := it.Next()
+		test, ok := arg0.Eval(env).(types.Boolean)
+		if ok {
+			arg1, _ := it.Next()
+			if test.Inner {
+				res = arg1.Eval(env)
+			} else {
+				arg2, exist := it.Next()
+				if exist {
+					res = arg2.Eval(env)
 				}
 			}
 		}
+
 	}
 	return res
 }
 
 func forForm(env types.Environment, args *types.List) types.Object {
 	res := types.NewList()
-	it := args.Iter()
-	arg0, exist := it.Next()
-	if exist {
-		arg1, exist2 := it.Next()
-		if exist2 {
-			it2, success := arg1.(types.Iterable)
-			if success {
-				bloc := types.NewList()
-				bloc.AddAll(it)
-				switch casted := arg0.(type) {
-				case *types.Identifer:
-					id := casted.Inner
-					types.ForEach(it2, func(value types.Object) bool {
-						env.StoreStr(id, value)
+	if args.SizeInt() > 2 {
+		it := args.Iter()
+		arg0, _ := it.Next()
+		arg1, _ := it.Next()
+		it2, success := arg1.Eval(env).(types.Iterable)
+		if success {
+			bloc := types.NewList()
+			bloc.AddAll(it)
+			switch casted := arg0.(type) {
+			case *types.Identifer:
+				id := casted.Inner
+				types.ForEach(it2, func(value types.Object) bool {
+					env.StoreStr(id, value)
+					types.ForEach(bloc, func(line types.Object) bool {
+						res.Add(line.Eval(env))
+						return true
+					})
+					return true
+				})
+			case *types.List:
+				ids := make([]string, 0, casted.SizeInt())
+				types.ForEach(casted, func(id types.Object) bool {
+					id2, success := id.(*types.Identifer)
+					if success {
+						ids = append(ids, id2.Inner)
+					}
+					return true
+				})
+				types.ForEach(it2, func(value types.Object) bool {
+					it3, success := value.(types.Iterable)
+					if success {
+						it4 := it3.Iter()
+						for _, id := range ids {
+							value2, _ := it4.Next()
+							env.StoreStr(id, value2)
+						}
 						types.ForEach(bloc, func(line types.Object) bool {
 							res.Add(line.Eval(env))
 							return true
 						})
-						return true
-					})
-				case *types.List:
-					ids := make([]string, 0, casted.SizeInt())
-					types.ForEach(casted, func(id types.Object) bool {
-						id2, success := id.(*types.Identifer)
-						if success {
-							ids = append(ids, id2.Inner)
-						}
-						return true
-					})
-					types.ForEach(it2, func(value types.Object) bool {
-						it3, success := value.(types.Iterable)
-						if success {
-							it4 := it3.Iter()
-							for _, id := range ids {
-								value2, _ := it4.Next()
-								env.StoreStr(id, value2)
-							}
-							types.ForEach(bloc, func(line types.Object) bool {
-								res.Add(line.Eval(env))
-								return true
-							})
-						}
-						return success
-					})
-				}
+					}
+					return success
+				})
 			}
 		}
 	}
@@ -96,27 +93,25 @@ func forForm(env types.Environment, args *types.List) types.Object {
 }
 
 func setForm(env types.Environment, args *types.List) types.Object {
-	it := args.Iter()
-	arg0, exist := it.Next()
-	if exist {
-		arg1, exist2 := it.Next()
-		if exist2 {
-			switch casted := arg0.(type) {
-			case *types.Identifer:
-				env.StoreStr(casted.Inner, arg1.Eval(env))
-			case *types.List:
-				it2, success := arg1.Eval(env).(types.Iterable)
-				if success {
-					it3 := it2.Iter()
-					types.ForEach(casted, func(id types.Object) bool {
-						id2, success := id.(*types.Identifer)
-						if success {
-							value, _ := it3.Next()
-							env.StoreStr(id2.Inner, value)
-						}
-						return success
-					})
-				}
+	if args.SizeInt() > 1 {
+		it := args.Iter()
+		arg0, _ := it.Next()
+		arg1, _ := it.Next()
+		switch casted := arg0.(type) {
+		case *types.Identifer:
+			env.StoreStr(casted.Inner, arg1.Eval(env))
+		case *types.List:
+			it2, success := arg1.Eval(env).(types.Iterable)
+			if success {
+				it3 := it2.Iter()
+				types.ForEach(casted, func(id types.Object) bool {
+					id2, success := id.(*types.Identifer)
+					if success {
+						value, _ := it3.Next()
+						env.StoreStr(id2.Inner, value)
+					}
+					return success
+				})
 			}
 		}
 	}

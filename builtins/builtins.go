@@ -148,7 +148,7 @@ func initBuitins() types.BaseEnvironment {
 	// true langage features
 	base.StoreStr("If", types.MakeNativeAppliable(ifForm))
 	base.StoreStr("For", types.MakeNativeAppliable(forForm))
-	base.StoreStr(":=", types.MakeNativeAppliable(setForm))
+	base.StoreStr(parser.SetName, types.MakeNativeAppliable(setForm))
 	base.StoreStr(".", types.MakeNativeAppliable(getForm))
 	base.StoreStr("[]", types.MakeNativeAppliable(indexForm))
 	// TODO init stuff

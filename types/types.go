@@ -220,7 +220,7 @@ type Identifer struct {
 }
 
 func (i *Identifer) Eval(env Environment) Object {
-	return env.Load((&i.String))
+	return env.LoadStr(i.Inner)
 }
 
 func NewIdentifier(s string) *Identifer {

@@ -24,6 +24,8 @@ import (
 	"github.com/dvaumoron/indentlang/types"
 )
 
+const SetName = ":="
+
 var customRules = types.NewList()
 
 func init() {
@@ -86,7 +88,7 @@ func listLiteralRule(env types.Environment, args *types.List) types.Object {
 		str, exist = arg0.(*types.String)
 		if exist {
 			s := str.Inner
-			if s != ":=" && strings.Contains(s, ":") {
+			if s != SetName && strings.Contains(s, ":") {
 				var arg1 types.Object
 				arg1, exist = it.Next()
 				if exist {
