@@ -17,6 +17,8 @@
  */
 package types
 
+import "reflect"
+
 type BaseEnvironment struct {
 	NoneType
 	objects map[string]Object
@@ -125,4 +127,114 @@ func (l *LocalEnvironment) CopyTo(other Environment) {
 
 func NewLocalEnvironment(env Environment) *LocalEnvironment {
 	return &LocalEnvironment{local: MakeBaseEnvironment(), parent: env}
+}
+
+type DataEnvironment struct {
+	NoneType
+	loadConfirm func(string) (Object, bool)
+	parent      Environment
+}
+
+func (d *DataEnvironment) Load(key Object) Object {
+	str, success := key.(*String)
+	var res Object
+	if success {
+		res = d.LoadStr(str.Inner)
+	} else {
+		res = None
+	}
+	return res
+}
+
+func (d *DataEnvironment) LoadStr(key string) Object {
+	res, exist := d.loadConfirm(key)
+	if !exist {
+		res = d.parent.LoadStr(key)
+	}
+	return res
+}
+
+func (d *DataEnvironment) Store(key, value Object) {
+	d.parent.Store(key, value)
+}
+
+func (d *DataEnvironment) StoreStr(key string, value Object) {
+	d.parent.StoreStr(key, value)
+}
+
+func (d *DataEnvironment) Delete(key Object) {
+	d.parent.Delete(key)
+}
+
+func (d *DataEnvironment) DeleteStr(key string) {
+	d.parent.DeleteStr(key)
+}
+
+func (d *DataEnvironment) CopyTo(other Environment) {
+	d.parent.CopyTo(other)
+}
+
+func NewDataEnvironment(data any, env Environment) *DataEnvironment {
+	var loadConfirm func(string) (Object, bool)
+	dataValue, isNil := indirect(data)
+	if isNil {
+		loadConfirm = neverConfirm
+	} else {
+		switch dataValue.Kind() {
+		case reflect.Struct:
+			dataType := dataValue.Type()
+			loadConfirm = func(fieldName string) (Object, bool) {
+				var res Object
+				tField, ok := dataType.FieldByName(fieldName)
+				if ok {
+					var err error
+					field, err := dataValue.FieldByIndexErr(tField.Index)
+					if err == nil {
+						res = wrapValue(field)
+					} else {
+						res = None
+						ok = false
+					}
+				}
+				return res, ok
+			}
+		case reflect.Map:
+			dataType := dataValue.Type()
+			if reflect.TypeOf("").AssignableTo(dataType.Key()) {
+				loadConfirm = func(fieldName string) (Object, bool) {
+					var res Object
+					result := dataValue.MapIndex(reflect.ValueOf(fieldName))
+					ok := result.IsValid()
+					if ok {
+						res = wrapValue(result)
+					} else {
+						res = None
+					}
+					return res, ok
+				}
+			} else {
+				loadConfirm = neverConfirm
+			}
+		}
+	}
+	return &DataEnvironment{loadConfirm: loadConfirm, parent: env}
+}
+
+func indirect(data any) (reflect.Value, bool) {
+	v := reflect.ValueOf(data)
+	for ; v.Kind() == reflect.Pointer || v.Kind() == reflect.Interface; v = v.Elem() {
+		if v.IsNil() {
+			return v, true
+		}
+	}
+	return v, false
+}
+
+func neverConfirm(s string) (Object, bool) {
+	return None, false
+}
+
+func wrapValue(value reflect.Value) Object {
+	// TODO
+	return None
 }

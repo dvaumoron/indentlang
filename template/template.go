@@ -32,8 +32,7 @@ type Template struct {
 }
 
 func (t *Template) Execute(w io.Writer, data any) error {
-	local := types.NewLocalEnvironment(t.env)
-	// TODO load data into local
+	local := types.NewDataEnvironment(data, types.NewLocalEnvironment(t.env))
 	_, err := t.main.Apply(local, types.NewList()).WriteTo(w)
 	return err
 }
