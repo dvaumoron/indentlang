@@ -36,7 +36,6 @@ func ifForm(env types.Environment, args *types.List) types.Object {
 				}
 			}
 		}
-
 	}
 	return res
 }
@@ -69,7 +68,7 @@ func forForm(env types.Environment, args *types.List) types.Object {
 					if success {
 						ids = append(ids, id2.Inner)
 					}
-					return true
+					return success
 				})
 				types.ForEach(it2, func(value types.Object) bool {
 					it3, success := value.(types.Iterable)
@@ -137,7 +136,7 @@ func getForm(env types.Environment, args *types.List) types.Object {
 	return res
 }
 
-func indexForm(env types.Environment, args *types.List) types.Object {
+func loadForm(env types.Environment, args *types.List) types.Object {
 	it := args.Iter()
 	res, ok := it.Next()
 	if ok {
@@ -150,4 +149,31 @@ func indexForm(env types.Environment, args *types.List) types.Object {
 		})
 	}
 	return res
+}
+
+func storeForm(env types.Environment, args *types.List) types.Object {
+	if size := args.SizeInt() - 2; size > 0 {
+		it := args.Iter()
+		arg, _ := it.Next()
+		ok := true
+		for i := 1; i < size; i++ {
+			key, _ := it.Next()
+			var current types.Loadable
+			current, ok = arg.(types.Loadable)
+			if ok {
+				arg = current.Load(key.Eval(env))
+			} else {
+				break
+			}
+		}
+		if ok {
+			current, ok := arg.(types.Storable)
+			if ok {
+				key, _ := it.Next()
+				value, _ := it.Next()
+				current.Store(key.Eval(env), value.Eval(env))
+			}
+		}
+	}
+	return types.None
 }

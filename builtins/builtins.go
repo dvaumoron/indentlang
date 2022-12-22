@@ -150,7 +150,10 @@ func initBuitins() types.BaseEnvironment {
 	base.StoreStr("For", types.MakeNativeAppliable(forForm))
 	base.StoreStr(parser.SetName, types.MakeNativeAppliable(setForm))
 	base.StoreStr(".", types.MakeNativeAppliable(getForm))
-	base.StoreStr("[]", types.MakeNativeAppliable(indexForm))
+	base.StoreStr("[]", types.MakeNativeAppliable(loadForm))
+	base.StoreStr("[]=", types.MakeNativeAppliable(storeForm))
+	base.StoreStr("Func", types.MakeNativeAppliable(funcForm))
+	base.StoreStr("Lambda", types.MakeNativeAppliable(lambdaForm))
 	// TODO init stuff
 	return base
 }
