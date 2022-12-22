@@ -247,6 +247,38 @@ func initBuitins() types.BaseEnvironment {
 		}
 		return types.None
 	}))
+	base.StoreStr(".", types.MakeNativeAppliable(func(env types.Environment, args *types.List) types.Object {
+		it := args.Iter()
+		res, ok := it.Next()
+		if ok {
+			types.ForEach(it, func(value types.Object) bool {
+				current, ok := res.(types.StringLoadable)
+				if ok {
+					var id *types.Identifer
+					id, ok = value.(*types.Identifer)
+					if ok {
+						res = current.LoadStr(id.Inner)
+					}
+				}
+				return ok
+			})
+		}
+		return res
+	}))
+	base.StoreStr("[]", types.MakeNativeAppliable(func(env types.Environment, args *types.List) types.Object {
+		it := args.Iter()
+		res, ok := it.Next()
+		if ok {
+			types.ForEach(it, func(value types.Object) bool {
+				current, ok := res.(types.Loadable)
+				if ok {
+					res = current.Load(value.Eval(env))
+				}
+				return ok
+			})
+		}
+		return res
+	}))
 	// TODO init stuff
 	return base
 }
