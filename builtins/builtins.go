@@ -154,7 +154,14 @@ func initBuitins() types.BaseEnvironment {
 	base.StoreStr("[]=", types.MakeNativeAppliable(storeForm))
 	base.StoreStr("Func", types.MakeNativeAppliable(funcForm))
 	base.StoreStr("Lambda", types.MakeNativeAppliable(lambdaForm))
+	base.StoreStr("Call", types.MakeNativeAppliable(callForm))
+	base.StoreStr("Macro", types.MakeNativeAppliable(macroForm))
 	// TODO init stuff
+	// List, Dict, Range
+	// +,-,*,/,//,%
+
+	// give parser package a protected copy to use in user custom rules
+	parser.BuiltinsCopy = types.NewLocalEnvironment(base)
 	return base
 }
 

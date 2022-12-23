@@ -135,6 +135,9 @@ func handleWord(words <-chan string, listStack stack[*types.List], done chan<- t
 	done <- types.None
 }
 
+// an empty environment to execute custom rules
+var BuiltinsCopy types.Environment = types.MakeBaseEnvironment()
+
 // Counter intuitive : return true when nothing have been done
 func handleCustomWord(word string, list *types.List) bool {
 	args := types.NewList()
@@ -146,7 +149,7 @@ func handleCustomWord(word string, list *types.List) bool {
 		if success {
 			var boolean types.Boolean
 			// The Apply must return true if it has created the node.
-			boolean, success = rule.Apply(nil, args).(types.Boolean)
+			boolean, success = rule.Apply(BuiltinsCopy, args).(types.Boolean)
 			success = success && boolean.Inner
 		}
 		return !success
