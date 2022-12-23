@@ -128,16 +128,16 @@ func (l *List) SizeInt() int {
 	return len(l.inner)
 }
 
-type ListIterator struct {
-	categories
+type chanIterator struct {
+	NoneType
 	receiver <-chan Object
 }
 
-func (it *ListIterator) Iter() Iterator {
+func (it *chanIterator) Iter() Iterator {
 	return it
 }
 
-func (it *ListIterator) Next() (Object, bool) {
+func (it *chanIterator) Next() (Object, bool) {
 	value, exist := <-it.receiver
 	if !exist {
 		value = None
@@ -148,7 +148,7 @@ func (it *ListIterator) Next() (Object, bool) {
 func (l *List) Iter() Iterator {
 	channel := make(chan Object)
 	go sendListValue(l.inner, channel)
-	return &ListIterator{categories: l.categories, receiver: channel}
+	return &chanIterator{receiver: channel}
 }
 
 func sendListValue(objects []Object, transmitter chan<- Object) {
@@ -178,16 +178,14 @@ func (l *List) WriteTo(w io.Writer) (int64, error) {
 }
 
 func (l *List) Eval(env Environment) Object {
-	var res Object
-	if size := len(l.inner); size == 0 {
-		res = None
-	} else {
-		value0 := l.inner[0].Eval(env)
+	it := l.Iter()
+	res, exist := it.Next()
+	if exist {
+		value0 := res.Eval(env)
 		if f, success := value0.(Appliable); success {
-			l2 := &List{categories: l.categories.Copy(), inner: l.inner[1:]}
-			res = f.Apply(env, l2)
+			res = f.Apply(env, it)
 		} else {
-			l2 := &List{categories: l.categories.Copy(), inner: make([]Object, 0, size)}
+			l2 := &List{categories: l.categories.Copy(), inner: make([]Object, 0, len(l.inner))}
 			l2.Add(value0)
 			for _, value := range l.inner[1:] {
 				l2.Add(value.Eval(env))

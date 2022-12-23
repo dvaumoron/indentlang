@@ -37,7 +37,7 @@ func init() {
 	customRules.Add(types.MakeNativeAppliable(attributeRule))
 }
 
-func constantRule(env types.Environment, args *types.List) types.Object {
+func constantRule(env types.Environment, args types.Iterable) types.Object {
 	it := args.Iter()
 	arg0, exist := it.Next()
 	if exist {
@@ -80,7 +80,7 @@ func constantRule(env types.Environment, args *types.List) types.Object {
 	return types.MakeBoolean(exist)
 }
 
-func listLiteralRule(env types.Environment, args *types.List) types.Object {
+func listLiteralRule(env types.Environment, args types.Iterable) types.Object {
 	it := args.Iter()
 	arg0, exist := it.Next()
 	if exist {
@@ -113,7 +113,7 @@ func listLiteralRule(env types.Environment, args *types.List) types.Object {
 	return types.MakeBoolean(exist)
 }
 
-func numberRule(env types.Environment, args *types.List) types.Object {
+func numberRule(env types.Environment, args types.Iterable) types.Object {
 	it := args.Iter()
 	arg0, exist := it.Next()
 	if exist {
@@ -153,7 +153,7 @@ func numberRule(env types.Environment, args *types.List) types.Object {
 	return types.MakeBoolean(exist)
 }
 
-func stringLiteralRule(env types.Environment, args *types.List) types.Object {
+func stringLiteralRule(env types.Environment, args types.Iterable) types.Object {
 	it := args.Iter()
 	arg0, exist := it.Next()
 	if exist {
@@ -177,7 +177,7 @@ func stringLiteralRule(env types.Environment, args *types.List) types.Object {
 	return types.MakeBoolean(exist)
 }
 
-func stringLiteralRule2(env types.Environment, args *types.List) types.Object {
+func stringLiteralRule2(env types.Environment, args types.Iterable) types.Object {
 	it := args.Iter()
 	arg0, exist := it.Next()
 	if exist {
@@ -219,7 +219,7 @@ func stringLiteralRule2(env types.Environment, args *types.List) types.Object {
 	return types.MakeBoolean(exist)
 }
 
-func attributeRule(env types.Environment, args *types.List) types.Object {
+func attributeRule(env types.Environment, args types.Iterable) types.Object {
 	it := args.Iter()
 	arg0, exist := it.Next()
 	if exist {

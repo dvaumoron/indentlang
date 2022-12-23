@@ -19,83 +19,81 @@ package builtins
 
 import "github.com/dvaumoron/indentlang/types"
 
-func ifForm(env types.Environment, args *types.List) types.Object {
-	var res types.Object = types.None
-	if args.SizeInt() > 1 {
-		it := args.Iter()
-		arg0, _ := it.Next()
-		test, ok := arg0.Eval(env).(types.Boolean)
-		if ok {
-			arg1, _ := it.Next()
-			if test.Inner {
-				res = arg1.Eval(env)
-			} else {
-				arg2, exist := it.Next()
-				if exist {
-					res = arg2.Eval(env)
-				}
-			}
+func ifForm(env types.Environment, args types.Iterable) types.Object {
+	it := args.Iter()
+	res, _ := it.Next()
+	test, ok := res.Eval(env).(types.Boolean)
+	if ok {
+		arg1, _ := it.Next()
+		if test.Inner {
+			res = arg1.Eval(env)
+		} else {
+			arg2, _ := it.Next()
+			res = arg2.Eval(env)
 		}
 	}
 	return res
 }
 
-func forForm(env types.Environment, args *types.List) types.Object {
+func forForm(env types.Environment, args types.Iterable) types.Object {
 	res := types.NewList()
-	if args.SizeInt() > 2 {
-		it := args.Iter()
-		arg0, _ := it.Next()
-		arg1, _ := it.Next()
-		it2, success := arg1.Eval(env).(types.Iterable)
-		if success {
-			bloc := types.NewList()
-			bloc.AddAll(it)
-			switch casted := arg0.(type) {
-			case *types.Identifer:
-				id := casted.Inner
-				types.ForEach(it2, func(value types.Object) bool {
-					env.StoreStr(id, value)
-					types.ForEach(bloc, func(line types.Object) bool {
-						res.Add(line.Eval(env))
-						return true
-					})
-					return true
-				})
-			case *types.List:
-				ids := make([]string, 0, casted.SizeInt())
-				types.ForEach(casted, func(id types.Object) bool {
-					id2, success := id.(*types.Identifer)
-					if success {
-						ids = append(ids, id2.Inner)
+	it := args.Iter()
+	arg0, _ := it.Next()
+	arg1, _ := it.Next()
+	it2, ok := arg1.Eval(env).(types.Iterable)
+	if ok {
+		bloc := types.NewList()
+		bloc.AddAll(it)
+		switch casted := arg0.(type) {
+		case *types.Identifer:
+			id := casted.Inner
+			types.ForEach(it2, func(value types.Object) bool {
+				env.StoreStr(id, value)
+				evalBloc(bloc, res, env)
+				return true
+			})
+		case *types.List:
+			ids := make([]string, 0, casted.SizeInt())
+			types.ForEach(casted, func(id types.Object) bool {
+				id2, success := id.(*types.Identifer)
+				if success {
+					ids = append(ids, id2.Inner)
+				}
+				return success
+			})
+			types.ForEach(it2, func(value types.Object) bool {
+				it3, success := value.(types.Iterable)
+				if success {
+					it4 := it3.Iter()
+					for _, id := range ids {
+						value2, _ := it4.Next()
+						env.StoreStr(id, value2)
 					}
-					return success
-				})
-				types.ForEach(it2, func(value types.Object) bool {
-					it3, success := value.(types.Iterable)
-					if success {
-						it4 := it3.Iter()
-						for _, id := range ids {
-							value2, _ := it4.Next()
-							env.StoreStr(id, value2)
-						}
-						types.ForEach(bloc, func(line types.Object) bool {
-							res.Add(line.Eval(env))
-							return true
-						})
-					}
-					return success
-				})
-			}
+					evalBloc(bloc, res, env)
+				}
+				return success
+			})
 		}
 	}
 	return res
 }
 
-func setForm(env types.Environment, args *types.List) types.Object {
-	if args.SizeInt() > 1 {
-		it := args.Iter()
-		arg0, _ := it.Next()
-		arg1, _ := it.Next()
+func evalBloc(bloc *types.List, res *types.List, env types.Environment) {
+	types.ForEach(bloc, func(line types.Object) bool {
+		evaluated := line.Eval(env)
+		_, ok := evaluated.(types.NoneType)
+		if !ok {
+			res.Add(evaluated)
+		}
+		return true
+	})
+}
+
+func setForm(env types.Environment, args types.Iterable) types.Object {
+	it := args.Iter()
+	arg0, _ := it.Next()
+	arg1, ok := it.Next()
+	if ok {
 		switch casted := arg0.(type) {
 		case *types.Identifer:
 			env.StoreStr(casted.Inner, arg1.Eval(env))
@@ -117,10 +115,11 @@ func setForm(env types.Environment, args *types.List) types.Object {
 	return types.None
 }
 
-func getForm(env types.Environment, args *types.List) types.Object {
+func getForm(env types.Environment, args types.Iterable) types.Object {
 	it := args.Iter()
 	res, ok := it.Next()
 	if ok {
+		res = res.Eval(env)
 		types.ForEach(it, func(value types.Object) bool {
 			current, ok := res.(types.StringLoadable)
 			if ok {
@@ -128,7 +127,11 @@ func getForm(env types.Environment, args *types.List) types.Object {
 				id, ok = value.(*types.Identifer)
 				if ok {
 					res = current.LoadStr(id.Inner)
+				} else {
+					res = types.None
 				}
+			} else {
+				res = types.None
 			}
 			return ok
 		})
@@ -136,14 +139,18 @@ func getForm(env types.Environment, args *types.List) types.Object {
 	return res
 }
 
-func loadForm(env types.Environment, args *types.List) types.Object {
+// cut evaluation when there is a mistake
+func loadForm(env types.Environment, args types.Iterable) types.Object {
 	it := args.Iter()
 	res, ok := it.Next()
 	if ok {
-		types.ForEach(it, func(value types.Object) bool {
+		res = res.Eval(env)
+		types.ForEach(it, func(key types.Object) bool {
 			current, ok := res.(types.Loadable)
 			if ok {
-				res = current.Load(value.Eval(env))
+				res = current.Load(key.Eval(env))
+			} else {
+				res = types.None
 			}
 			return ok
 		})
@@ -151,9 +158,10 @@ func loadForm(env types.Environment, args *types.List) types.Object {
 	return res
 }
 
-func storeForm(env types.Environment, args *types.List) types.Object {
-	if size := args.SizeInt() - 2; size > 0 {
-		it := args.Iter()
+func storeFunc(env types.Environment, args types.Iterable) types.Object {
+	evaluated := evalIterable(env, args)
+	if size := evaluated.SizeInt() - 2; size > 0 {
+		it := evaluated.Iter()
 		arg, _ := it.Next()
 		ok := true
 		for i := 1; i < size; i++ {
@@ -161,7 +169,7 @@ func storeForm(env types.Environment, args *types.List) types.Object {
 			var current types.Loadable
 			current, ok = arg.(types.Loadable)
 			if ok {
-				arg = current.Load(key.Eval(env))
+				arg = current.Load(key)
 			} else {
 				break
 			}
@@ -171,7 +179,7 @@ func storeForm(env types.Environment, args *types.List) types.Object {
 			if ok {
 				key, _ := it.Next()
 				value, _ := it.Next()
-				current.Store(key.Eval(env), value.Eval(env))
+				current.Store(key, value)
 			}
 		}
 	}

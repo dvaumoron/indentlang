@@ -32,8 +32,8 @@ func initBuitins() types.BaseEnvironment {
 	base := types.MakeBaseEnvironment()
 	// special case in order to create Main,
 	// which will be called by the Execute method of the Template struct
-	base.StoreStr("html", types.MakeNativeAppliable(func(env types.Environment, args *types.List) types.Object {
-		env.StoreStr(MainName, types.MakeNativeAppliable(func(callEnv types.Environment, emptyArgs *types.List) types.Object {
+	base.StoreStr("html", types.MakeNativeAppliable(func(env types.Environment, args types.Iterable) types.Object {
+		env.StoreStr(MainName, types.MakeNativeAppliable(func(callEnv types.Environment, emptyArgs types.Iterable) types.Object {
 			return elementHtml.Apply(callEnv, args)
 		}))
 		return types.None
@@ -146,19 +146,21 @@ func initBuitins() types.BaseEnvironment {
 	addHtmlElement(base, "wbr")
 
 	// true langage features
+	// *Form indicate a special form
+	// *Func indicate a normal function
 	base.StoreStr("If", types.MakeNativeAppliable(ifForm))
 	base.StoreStr("For", types.MakeNativeAppliable(forForm))
 	base.StoreStr(parser.SetName, types.MakeNativeAppliable(setForm))
 	base.StoreStr(".", types.MakeNativeAppliable(getForm))
 	base.StoreStr("[]", types.MakeNativeAppliable(loadForm))
-	base.StoreStr("[]=", types.MakeNativeAppliable(storeForm))
+	base.StoreStr("[]=", types.MakeNativeAppliable(storeFunc))
 	base.StoreStr("Func", types.MakeNativeAppliable(funcForm))
 	base.StoreStr("Lambda", types.MakeNativeAppliable(lambdaForm))
 	base.StoreStr("Call", types.MakeNativeAppliable(callForm))
 	base.StoreStr("Macro", types.MakeNativeAppliable(macroForm))
 	// TODO init stuff
-	// List, Dict, Range
-	// +,-,*,/,//,%
+	// List, Dict, Range, Enumerate, Add, Size, Iter, Next, AddAttribute, HasAttribute
+	// And, Or, Not, ==, !=, >, >=, <, <=, +, -, *, /, //, %
 
 	// give parser package a protected copy to use in user custom rules
 	parser.BuiltinsCopy = types.NewLocalEnvironment(base)
@@ -179,7 +181,7 @@ var quote = types.NewString("\"")
 
 func CreateHtmlElement(name string) types.NativeAppliable {
 	wrappedName := types.NewString(name)
-	return types.MakeNativeAppliable(func(env types.Environment, args *types.List) types.Object {
+	return types.MakeNativeAppliable(func(env types.Environment, args types.Iterable) types.Object {
 		local := types.NewLocalEnvironment(env)
 		attrs := types.NewList()
 		childs := types.NewList()

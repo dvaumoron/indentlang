@@ -66,9 +66,10 @@ type Iterator interface {
 }
 
 type Iterable interface {
+	Object
 	Iter() Iterator
 }
 
 type Appliable interface {
-	Apply(Environment, *List) Object
+	Apply(Environment, Iterable) Object
 }

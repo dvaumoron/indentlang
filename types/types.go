@@ -229,13 +229,13 @@ func NewIdentifier(s string) *Identifer {
 
 type NativeAppliable struct {
 	NoneType
-	inner func(Environment, *List) Object
+	inner func(Environment, Iterable) Object
 }
 
-func (n NativeAppliable) Apply(env Environment, l *List) Object {
-	return n.inner(env, l)
+func (n NativeAppliable) Apply(env Environment, it Iterable) Object {
+	return n.inner(env, it)
 }
 
-func MakeNativeAppliable(f func(Environment, *List) Object) NativeAppliable {
+func MakeNativeAppliable(f func(Environment, Iterable) Object) NativeAppliable {
 	return NativeAppliable{inner: f}
 }

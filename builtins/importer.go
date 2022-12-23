@@ -117,8 +117,9 @@ func MakeImportDirective(basePath string) types.NativeAppliable {
 		directiveMutex.Lock()
 		res, exist = directiveCache[basePath]
 		if !exist {
-			res = types.MakeNativeAppliable(func(env types.Environment, args *types.List) types.Object {
-				filePath, success := args.Load(types.NewInteger(0)).(*types.String)
+			res = types.MakeNativeAppliable(func(env types.Environment, args types.Iterable) types.Object {
+				arg0, _ := args.Iter().Next()
+				filePath, success := arg0.(*types.String)
 				if success {
 					response := make(chan types.Environment)
 					requestToImporter <- importRequest{
