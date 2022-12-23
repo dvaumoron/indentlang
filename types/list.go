@@ -28,8 +28,8 @@ func (l *List) Add(value Object) {
 	l.inner = append(l.inner, value)
 }
 
-// If the action func return false that break the loop and ForEach return false too.
-func ForEach(it Iterable, action func(Object) bool) bool {
+// If the action func return false that break the loop.
+func ForEach(it Iterable, action func(Object) bool) {
 	exist := true
 	it2 := it.Iter()
 	for exist {
@@ -39,7 +39,6 @@ func ForEach(it Iterable, action func(Object) bool) bool {
 			exist = action(value)
 		}
 	}
-	return exist
 }
 
 func (l *List) AddAll(it Iterable) {
@@ -49,70 +48,59 @@ func (l *List) AddAll(it Iterable) {
 	})
 }
 
+func convertToInt(arg Object, init int) int {
+	res := init
+	casted, ok := arg.(*Integer)
+	if ok {
+		res = int(casted.Inner)
+	}
+	return res
+}
+
+func extractIndex(args []Object, max int) (int, int) {
+	var arg0, arg1 Object = None, None
+	switch len(args) {
+	case 0:
+		// nothing to do, initialisation to None is enough
+	default:
+		// here, there is always enough element in the slice
+		arg1 = args[1]
+		fallthrough // allow initialisation of arg0
+	case 1:
+		// without fallthrough arg1 is None
+		arg0 = args[0]
+	}
+	return convertToInt(arg0, 0), convertToInt(arg1, max)
+}
+
+func (l *List) LoadInt(index int) Object {
+	var res Object = None
+	if 0 <= index && index < len(l.inner) {
+		res = l.inner[index]
+	}
+	return res
+}
+
 func (l *List) Load(key Object) Object {
-	var res Object
+	var res Object = None
 	switch casted := key.(type) {
 	case *Integer:
-		index := int(casted.Inner)
-		if 0 <= index && index < len(l.inner) {
-			res = l.inner[index]
-		} else {
-			res = None
-		}
+		res = l.LoadInt(int(casted.Inner))
+	case *Float:
+		res = l.LoadInt(int(casted.Inner))
 	case *List:
-		if args := casted.inner; len(args) > 1 {
-			start, success := args[0].(*Integer)
-			if success {
-				startInt := int(start.Inner)
-				end, success := args[1].(*Integer)
-				if success {
-					endInt := int(end.Inner)
-					if 0 <= startInt && startInt <= endInt && endInt < len(l.inner) {
-						res = &List{
-							categories: l.categories.Copy(),
-							inner:      l.inner[startInt:endInt],
-						}
-					} else {
-						res = None
-					}
-				} else {
-					if 0 <= startInt && startInt < len(l.inner) {
-						res = &List{
-							categories: l.categories.Copy(),
-							inner:      l.inner[startInt:],
-						}
-					} else {
-						res = None
-					}
-				}
-			} else {
-				end, success := args[1].(*Integer)
-				if success {
-					endInt := int(end.Inner)
-					if 0 <= endInt && endInt < len(l.inner) {
-						res = &List{
-							categories: l.categories.Copy(),
-							inner:      l.inner[:endInt],
-						}
-					} else {
-						res = None
-					}
-				} else {
-					res = l
-				}
-			}
-		} else {
-			res = l
+		max := len(l.inner)
+		start, end := extractIndex(casted.inner, max)
+		if 0 <= start && start <= end && end <= max {
+			res = &List{categories: l.categories.Copy(), inner: l.inner[start:end]}
 		}
-	default:
-		res = None
 	}
 	return res
 }
 
 func (l *List) Store(key, value Object) {
-	integer, success := key.(*Integer)
-	if success {
+	integer, ok := key.(*Integer)
+	if ok {
 		index := int(integer.Inner)
 		if 0 <= index && index < len(l.inner) {
 			l.inner[index] = value
@@ -182,7 +170,7 @@ func (l *List) Eval(env Environment) Object {
 	res, exist := it.Next()
 	if exist {
 		value0 := res.Eval(env)
-		if f, success := value0.(Appliable); success {
+		if f, ok := value0.(Appliable); ok {
 			res = f.Apply(env, it)
 		} else {
 			l2 := &List{categories: l.categories.Copy(), inner: make([]Object, 0, len(l.inner))}

@@ -153,16 +153,25 @@ func initBuitins() types.BaseEnvironment {
 	base.StoreStr("While", types.MakeNativeAppliable(whileForm))
 	base.StoreStr(parser.SetName, types.MakeNativeAppliable(setForm))
 	base.StoreStr(".", types.MakeNativeAppliable(getForm))
-	base.StoreStr("[]", types.MakeNativeAppliable(loadForm))
+	base.StoreStr("[]", types.MakeNativeAppliable(loadFunc))
 	base.StoreStr("[]=", types.MakeNativeAppliable(storeFunc))
 	base.StoreStr("Func", types.MakeNativeAppliable(funcForm))
 	base.StoreStr("Lambda", types.MakeNativeAppliable(lambdaForm))
-	base.StoreStr("Call", types.MakeNativeAppliable(callForm))
+	base.StoreStr("Call", types.MakeNativeAppliable(callFunc))
 	base.StoreStr("Macro", types.MakeNativeAppliable(macroForm))
+
 	// TODO init stuff
 	// Quote, Unquote, type conversion
 	// List, Dict, Range, Enumerate, Add, Size, Del, Iter, Next, AddAttribute, HasAttribute
-	// And, Or, Not, ==, !=, >, >=, <, <=, +, -, *, /, //, %
+	// And, Or, Not, ==, !=, >, >=, <, <=
+
+	// some function to do math
+	base.StoreStr("+", types.MakeNativeAppliable(sumFunc))
+	base.StoreStr("-", types.MakeNativeAppliable(minusFunc))
+	base.StoreStr("*", types.MakeNativeAppliable(productFunc))
+	base.StoreStr("/", types.MakeNativeAppliable(divFunc))
+	base.StoreStr("//", types.MakeNativeAppliable(floorDivFunc))
+	base.StoreStr("%", types.MakeNativeAppliable(remainderFunc))
 
 	// give parser package a protected copy to use in user custom rules
 	parser.BuiltinsCopy = types.NewLocalEnvironment(base)
@@ -200,8 +209,8 @@ func CreateHtmlElement(name string) types.NativeAppliable {
 		res.Add(openElement)
 		res.Add(wrappedName)
 		types.ForEach(attrs, func(value types.Object) bool {
-			attr, success := value.(types.Iterable)
-			if success {
+			attr, ok := value.(types.Iterable)
+			if ok {
 				itAttr := attr.Iter()
 				attrName, exist := itAttr.Next()
 				if exist {

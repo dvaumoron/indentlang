@@ -143,66 +143,27 @@ func (s *String) Eval(env Environment) Object {
 	return s
 }
 
+func (s *String) LoadInt(index int) Object {
+	var res Object = None
+	if 0 <= index && index < len(s.Inner) {
+		res = &String{categories: s.categories.Copy(), Inner: s.Inner[index : index+1]}
+	}
+	return res
+}
+
 func (s *String) Load(key Object) Object {
-	var res Object
+	var res Object = None
 	switch casted := key.(type) {
 	case *Integer:
-		index := int(casted.Inner)
-		if 0 <= index && index < len(s.Inner) {
-			res = &String{
-				categories: s.categories.Copy(),
-				Inner:      s.Inner[index : index+1],
-			}
-		} else {
-			res = None
-		}
+		res = s.LoadInt(int(casted.Inner))
+	case *Float:
+		res = s.LoadInt(int(casted.Inner))
 	case *List:
-		if args := casted.inner; len(args) > 1 {
-			start, success := args[0].(*Integer)
-			if success {
-				startInt := int(start.Inner)
-				end, success := args[1].(*Integer)
-				if success {
-					endInt := int(end.Inner)
-					if 0 <= startInt && startInt <= endInt && endInt < len(s.Inner) {
-						res = &String{
-							categories: s.categories.Copy(),
-							Inner:      s.Inner[startInt:endInt],
-						}
-					} else {
-						res = None
-					}
-				} else {
-					if 0 <= startInt && startInt < len(s.Inner) {
-						res = &String{
-							categories: s.categories.Copy(),
-							Inner:      s.Inner[startInt:],
-						}
-					} else {
-						res = None
-					}
-				}
-			} else {
-				end, success := args[1].(*Integer)
-				if success {
-					endInt := int(end.Inner)
-					if 0 <= endInt && endInt < len(s.Inner) {
-						res = &String{
-							categories: s.categories.Copy(),
-							Inner:      s.Inner[:endInt],
-						}
-					} else {
-						res = None
-					}
-				} else {
-					res = s
-				}
-			}
-		} else {
-			res = s
+		max := len(s.Inner)
+		start, end := extractIndex(casted.inner, max)
+		if 0 <= start && start <= end && end <= max {
+			res = &String{categories: s.categories.Copy(), Inner: s.Inner[start:end]}
 		}
-	default:
-		res = None
 	}
 	return res
 }

@@ -56,8 +56,8 @@ func forForm(env types.Environment, args types.Iterable) types.Object {
 			if casted.SizeInt() != 0 {
 				ids := extractIds(casted)
 				types.ForEach(it2, func(value types.Object) bool {
-					it3, success := value.(types.Iterable)
-					if success {
+					it3, ok := value.(types.Iterable)
+					if ok {
 						it4 := it3.Iter()
 						for _, id := range ids {
 							value2, _ := it4.Next()
@@ -65,7 +65,7 @@ func forForm(env types.Environment, args types.Iterable) types.Object {
 						}
 						evalBloc(bloc, res, env)
 					}
-					return success
+					return ok
 				})
 			}
 		}
@@ -81,8 +81,8 @@ func whileForm(env types.Environment, args types.Iterable) types.Object {
 	bloc.AddAll(it)
 	if bloc.SizeInt() != 0 {
 		for {
-			condition, success := arg0.Eval(env).(types.Boolean)
-			if !success || !condition.Inner {
+			condition, ok := arg0.Eval(env).(types.Boolean)
+			if !ok || !condition.Inner {
 				break
 			}
 			evalBloc(bloc, res, env)
@@ -111,16 +111,16 @@ func setForm(env types.Environment, args types.Iterable) types.Object {
 		case *types.Identifer:
 			env.StoreStr(casted.Inner, arg1.Eval(env))
 		case *types.List:
-			it2, success := arg1.Eval(env).(types.Iterable)
-			if success {
+			it2, ok := arg1.Eval(env).(types.Iterable)
+			if ok {
 				it3 := it2.Iter()
 				types.ForEach(casted, func(id types.Object) bool {
-					id2, success := id.(*types.Identifer)
-					if success {
+					id2, ok := id.(*types.Identifer)
+					if ok {
 						value, _ := it3.Next()
 						env.StoreStr(id2.Inner, value)
 					}
-					return success
+					return ok
 				})
 			}
 		}
@@ -135,16 +135,13 @@ func getForm(env types.Environment, args types.Iterable) types.Object {
 		res = res.Eval(env)
 		types.ForEach(it, func(value types.Object) bool {
 			current, ok := res.(types.StringLoadable)
+			res = types.None
 			if ok {
 				var id *types.Identifer
 				id, ok = value.(*types.Identifer)
 				if ok {
 					res = current.LoadStr(id.Inner)
-				} else {
-					res = types.None
 				}
-			} else {
-				res = types.None
 			}
 			return ok
 		})
@@ -152,8 +149,7 @@ func getForm(env types.Environment, args types.Iterable) types.Object {
 	return res
 }
 
-// cut evaluation when there is a mistake
-func loadForm(env types.Environment, args types.Iterable) types.Object {
+func loadFunc(env types.Environment, args types.Iterable) types.Object {
 	it := args.Iter()
 	res, ok := it.Next()
 	if ok {
@@ -172,7 +168,7 @@ func loadForm(env types.Environment, args types.Iterable) types.Object {
 }
 
 func storeFunc(env types.Environment, args types.Iterable) types.Object {
-	evaluated := evalIterable(env, args)
+	evaluated := evalIterable(args, env)
 	if size := evaluated.SizeInt() - 2; size > 0 {
 		it := evaluated.Iter()
 		arg, _ := it.Next()

@@ -101,20 +101,20 @@ LineLoop:
 					buildingWord = sendReset(words, buildingWord)
 					words <- string(char)
 				case '"', '\'':
+					buildingWord = append(buildingWord, char)
 					var err error
-					buildingWord, err = readUntil(buildingWord, char, chars, char)
+					buildingWord, err = readUntil(buildingWord, chars, char)
 					if err != nil {
 						return nil, err
 					}
 				case '#':
+					finishLine(words, buildingWord, done)
 					break LineLoop
 				default:
 					buildingWord = append(buildingWord, char)
 				}
 			}
-			sendReset(words, buildingWord)
-			close(words)
-			<-done
+			finishLine(words, buildingWord, done)
 		}
 	}
 	return res, nil
@@ -144,15 +144,15 @@ func handleCustomWord(word string, list *types.List) bool {
 	args.Add(types.NewString(word))
 	args.Add(list)
 	args.Add(customRules)
-	res := !types.ForEach(customRules, func(object types.Object) bool {
-		rule, success := object.(types.Appliable)
-		if success {
-			var boolean types.Boolean
+	res := true
+	types.ForEach(customRules, func(object types.Object) bool {
+		rule, ok := object.(types.Appliable)
+		if ok {
 			// The Apply must return true if it has created the node.
-			boolean, success = rule.Apply(BuiltinsCopy, args).(types.Boolean)
-			success = success && boolean.Inner
+			boolean, ok := rule.Apply(BuiltinsCopy, args).(types.Boolean)
+			res = !(ok && boolean.Inner)
 		}
-		return !success
+		return res
 	})
 	return res
 }
@@ -173,8 +173,7 @@ func sendReset(words chan<- string, buildingWord []rune) []rune {
 	return buildingWord
 }
 
-func readUntil(buildingWord []rune, char rune, chars <-chan rune, delim rune) ([]rune, error) {
-	buildingWord = append(buildingWord, char)
+func readUntil(buildingWord []rune, chars <-chan rune, delim rune) ([]rune, error) {
 	char, exist := <-chars
 	for exist {
 		buildingWord = append(buildingWord, char)
@@ -191,4 +190,10 @@ func readUntil(buildingWord []rune, char rune, chars <-chan rune, delim rune) ([
 		char, exist = <-chars
 	}
 	return buildingWord, nil
+}
+
+func finishLine(words chan<- string, buildingWord []rune, done <-chan types.NoneType) {
+	sendReset(words, buildingWord)
+	close(words)
+	<-done
 }

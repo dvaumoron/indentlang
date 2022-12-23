@@ -111,16 +111,16 @@ var directiveCache = map[string]types.NativeAppliable{}
 func MakeImportDirective(basePath string) types.NativeAppliable {
 	basePath = CheckPath(basePath)
 	directiveMutex.RLock()
-	res, exist := directiveCache[basePath]
+	res, ok := directiveCache[basePath]
 	directiveMutex.RUnlock()
-	if !exist {
+	if !ok {
 		directiveMutex.Lock()
-		res, exist = directiveCache[basePath]
-		if !exist {
+		res, ok = directiveCache[basePath]
+		if !ok {
 			res = types.MakeNativeAppliable(func(env types.Environment, args types.Iterable) types.Object {
 				arg0, _ := args.Iter().Next()
-				filePath, success := arg0.(*types.String)
-				if success {
+				filePath, ok := arg0.(*types.String)
+				if ok {
 					response := make(chan types.Environment)
 					requestToImporter <- importRequest{
 						basePath: basePath, filePath: filePath.Inner, responder: response,

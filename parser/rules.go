@@ -39,62 +39,62 @@ func init() {
 
 func constantRule(env types.Environment, args types.Iterable) types.Object {
 	it := args.Iter()
-	arg0, exist := it.Next()
-	if exist {
+	arg0, ok := it.Next()
+	if ok {
 		var str *types.String
-		str, exist = arg0.(*types.String)
-		if exist {
+		str, ok = arg0.(*types.String)
+		if ok {
 			if s := str.Inner; s == "true" {
 				var arg1 types.Object
-				arg1, exist = it.Next()
-				if exist {
+				arg1, ok = it.Next()
+				if ok {
 					var nodeList *types.List
-					nodeList, exist = arg1.(*types.List)
-					if exist {
+					nodeList, ok = arg1.(*types.List)
+					if ok {
 						nodeList.Add(types.True)
 					}
 				}
 			} else if s == "false" {
 				var arg1 types.Object
-				arg1, exist = it.Next()
-				if exist {
+				arg1, ok = it.Next()
+				if ok {
 					var nodeList *types.List
-					nodeList, exist = arg1.(*types.List)
-					if exist {
+					nodeList, ok = arg1.(*types.List)
+					if ok {
 						nodeList.Add(types.False)
 					}
 				}
 			} else if s == "None" {
 				var arg1 types.Object
-				arg1, exist = it.Next()
-				if exist {
+				arg1, ok = it.Next()
+				if ok {
 					var nodeList *types.List
-					nodeList, exist = arg1.(*types.List)
-					if exist {
+					nodeList, ok = arg1.(*types.List)
+					if ok {
 						nodeList.Add(types.None)
 					}
 				}
 			}
 		}
 	}
-	return types.MakeBoolean(exist)
+	return types.MakeBoolean(ok)
 }
 
 func listLiteralRule(env types.Environment, args types.Iterable) types.Object {
 	it := args.Iter()
-	arg0, exist := it.Next()
-	if exist {
+	arg0, ok := it.Next()
+	if ok {
 		var str *types.String
-		str, exist = arg0.(*types.String)
-		if exist {
+		str, ok = arg0.(*types.String)
+		if ok {
 			s := str.Inner
 			if s != SetName && strings.Contains(s, ":") {
 				var arg1 types.Object
-				arg1, exist = it.Next()
-				if exist {
+				arg1, ok = it.Next()
+				if ok {
 					var nodeList *types.List
-					nodeList, exist = arg1.(*types.List)
-					if exist {
+					nodeList, ok = arg1.(*types.List)
+					if ok {
 						nodeList2 := types.NewList()
 						nodeList.Add(nodeList2)
 						nodeList2.Add(ListId)
@@ -110,25 +110,25 @@ func listLiteralRule(env types.Environment, args types.Iterable) types.Object {
 			}
 		}
 	}
-	return types.MakeBoolean(exist)
+	return types.MakeBoolean(ok)
 }
 
 func numberRule(env types.Environment, args types.Iterable) types.Object {
 	it := args.Iter()
-	arg0, exist := it.Next()
-	if exist {
+	arg0, ok := it.Next()
+	if ok {
 		var str *types.String
-		str, exist = arg0.(*types.String)
-		if exist {
+		str, ok = arg0.(*types.String)
+		if ok {
 			s := str.Inner
 			i, err := strconv.ParseInt(s, 10, 64)
 			if err == nil {
 				var arg1 types.Object
-				arg1, exist = it.Next()
-				if exist {
+				arg1, ok = it.Next()
+				if ok {
 					var nodeList *types.List
-					nodeList, exist = arg1.(*types.List)
-					if exist {
+					nodeList, ok = arg1.(*types.List)
+					if ok {
 						nodeList.Add(types.NewInteger(i))
 					}
 				}
@@ -136,37 +136,37 @@ func numberRule(env types.Environment, args types.Iterable) types.Object {
 				f, err := strconv.ParseFloat(s, 64)
 				if err == nil {
 					var arg1 types.Object
-					arg1, exist = it.Next()
-					if exist {
+					arg1, ok = it.Next()
+					if ok {
 						var nodeList *types.List
-						nodeList, exist = arg1.(*types.List)
-						if exist {
+						nodeList, ok = arg1.(*types.List)
+						if ok {
 							nodeList.Add(types.NewFloat(f))
 						}
 					}
 				} else {
-					exist = false
+					ok = false
 				}
 			}
 		}
 	}
-	return types.MakeBoolean(exist)
+	return types.MakeBoolean(ok)
 }
 
 func stringLiteralRule(env types.Environment, args types.Iterable) types.Object {
 	it := args.Iter()
-	arg0, exist := it.Next()
-	if exist {
+	arg0, ok := it.Next()
+	if ok {
 		var str *types.String
-		str, exist = arg0.(*types.String)
-		if exist {
+		str, ok = arg0.(*types.String)
+		if ok {
 			if s := str.Inner; s[0] == '"' {
 				var arg1 types.Object
-				arg1, exist = it.Next()
-				if exist {
+				arg1, ok = it.Next()
+				if ok {
 					var nodeList *types.List
-					nodeList, exist = arg1.(*types.List)
-					if exist {
+					nodeList, ok = arg1.(*types.List)
+					if ok {
 						s = strings.ReplaceAll(s[1:len(s)-1], "\\'", "'")
 						nodeList.Add(types.NewString(s))
 					}
@@ -174,23 +174,23 @@ func stringLiteralRule(env types.Environment, args types.Iterable) types.Object 
 			}
 		}
 	}
-	return types.MakeBoolean(exist)
+	return types.MakeBoolean(ok)
 }
 
 func stringLiteralRule2(env types.Environment, args types.Iterable) types.Object {
 	it := args.Iter()
-	arg0, exist := it.Next()
-	if exist {
+	arg0, ok := it.Next()
+	if ok {
 		var str *types.String
-		str, exist = arg0.(*types.String)
-		if exist {
+		str, ok = arg0.(*types.String)
+		if ok {
 			if s := str.Inner; s[0] == '\'' {
 				var arg1 types.Object
-				arg1, exist = it.Next()
-				if exist {
+				arg1, ok = it.Next()
+				if ok {
 					var nodeList *types.List
-					nodeList, exist = arg1.(*types.List)
-					if exist {
+					nodeList, ok = arg1.(*types.List)
+					if ok {
 						skipApos := false
 						size := len(s)
 						s2 := make([]rune, 0, size)
@@ -216,23 +216,23 @@ func stringLiteralRule2(env types.Environment, args types.Iterable) types.Object
 			}
 		}
 	}
-	return types.MakeBoolean(exist)
+	return types.MakeBoolean(ok)
 }
 
 func attributeRule(env types.Environment, args types.Iterable) types.Object {
 	it := args.Iter()
-	arg0, exist := it.Next()
-	if exist {
+	arg0, ok := it.Next()
+	if ok {
 		var str *types.String
-		str, exist = arg0.(*types.String)
-		if exist {
+		str, ok = arg0.(*types.String)
+		if ok {
 			if s := str.Inner; s[0] == '@' && len(s) > 1 {
 				var arg1 types.Object
-				arg1, exist = it.Next()
-				if exist {
+				arg1, ok = it.Next()
+				if ok {
 					var nodeList *types.List
-					nodeList, exist = arg1.(*types.List)
-					if exist {
+					nodeList, ok = arg1.(*types.List)
+					if ok {
 						elems := strings.Split(s[1:], "=")
 						attr := types.NewList()
 						attr.AddCategory(AttributeName)
@@ -249,5 +249,5 @@ func attributeRule(env types.Environment, args types.Iterable) types.Object {
 			}
 		}
 	}
-	return types.MakeBoolean(exist)
+	return types.MakeBoolean(ok)
 }

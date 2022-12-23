@@ -40,19 +40,15 @@ func neverConfirm(s string) (Object, bool) {
 func loadFromStruct(value reflect.Value) func(string) (Object, bool) {
 	vType := value.Type()
 	return func(fieldName string) (Object, bool) {
-		var res Object
+		var res Object = None
 		fType, ok := vType.FieldByName(fieldName)
 		if ok && fType.IsExported() {
-			var err error
 			field, err := value.FieldByIndexErr(fType.Index)
 			if err == nil {
 				res = valueToObject(field)
 			} else {
-				res = None
 				ok = false
 			}
-		} else {
-			res = None
 		}
 		return res, ok
 	}
@@ -60,13 +56,11 @@ func loadFromStruct(value reflect.Value) func(string) (Object, bool) {
 
 func loadFromMap(value reflect.Value) func(string) (Object, bool) {
 	return func(fieldName string) (Object, bool) {
-		var res Object
+		var res Object = None
 		resValue := value.MapIndex(reflect.ValueOf(fieldName))
 		ok := resValue.IsValid()
 		if ok {
 			res = valueToObject(resValue)
-		} else {
-			res = None
 		}
 		return res, ok
 	}
@@ -78,12 +72,10 @@ type LoadWrapper struct {
 }
 
 func (w LoadWrapper) Load(key Object) Object {
-	str, success := key.(*String)
-	var res Object
-	if success {
+	var res Object = None
+	str, ok := key.(*String)
+	if ok {
 		res, _ = w.loadConfirm(str.Inner)
-	} else {
-		res = None
 	}
 	return res
 }
@@ -94,11 +86,9 @@ func (w LoadWrapper) LoadStr(s string) Object {
 }
 
 func valueToObject(value reflect.Value) Object {
+	var res Object = None
 	value, isNil := indirect(value)
-	var res Object
-	if isNil {
-		res = None
-	} else {
+	if !isNil {
 		switch value.Kind() {
 		case reflect.Bool:
 			if value.Bool() {
@@ -128,11 +118,7 @@ func valueToObject(value reflect.Value) Object {
 		case reflect.Map:
 			if stringType.AssignableTo(value.Type().Key()) {
 				res = LoadWrapper{loadConfirm: loadFromMap(value)}
-			} else {
-				res = None
 			}
-		default:
-			res = None
 		}
 	}
 	return res

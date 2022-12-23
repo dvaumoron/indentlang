@@ -25,20 +25,18 @@ type BaseEnvironment struct {
 }
 
 func (b BaseEnvironment) loadConfirm(key string) (Object, bool) {
-	res, exist := b.objects[key]
-	if !exist {
+	res, ok := b.objects[key]
+	if !ok {
 		res = None
 	}
-	return res, exist
+	return res, ok
 }
 
 func (b BaseEnvironment) Load(key Object) Object {
-	str, success := key.(*String)
-	var res Object
-	if success {
+	str, ok := key.(*String)
+	var res Object = None
+	if ok {
 		res, _ = b.loadConfirm(str.Inner)
-	} else {
-		res = None
 	}
 	return res
 }
@@ -49,8 +47,8 @@ func (b BaseEnvironment) LoadStr(key string) Object {
 }
 
 func (b BaseEnvironment) Store(key, value Object) {
-	str, success := key.(*String)
-	if success {
+	str, ok := key.(*String)
+	if ok {
 		b.objects[str.Inner] = value
 	}
 }
@@ -60,8 +58,8 @@ func (b BaseEnvironment) StoreStr(key string, value Object) {
 }
 
 func (b BaseEnvironment) Delete(key Object) {
-	str, success := key.(*String)
-	if success {
+	str, ok := key.(*String)
+	if ok {
 		delete(b.objects, str.Inner)
 	}
 }
@@ -87,12 +85,10 @@ type LocalEnvironment struct {
 }
 
 func (l *LocalEnvironment) Load(key Object) Object {
-	str, success := key.(*String)
-	var res Object
-	if success {
+	str, ok := key.(*String)
+	var res Object = None
+	if ok {
 		res = l.LoadStr(str.Inner)
-	} else {
-		res = None
 	}
 	return res
 }
@@ -136,12 +132,10 @@ type DataEnvironment struct {
 }
 
 func (d *DataEnvironment) Load(key Object) Object {
-	str, success := key.(*String)
-	var res Object
-	if success {
+	str, ok := key.(*String)
+	var res Object = None
+	if ok {
 		res = d.LoadStr(str.Inner)
-	} else {
-		res = None
 	}
 	return res
 }
