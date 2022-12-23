@@ -53,26 +53,39 @@ func forForm(env types.Environment, args types.Iterable) types.Object {
 				return true
 			})
 		case *types.List:
-			ids := make([]string, 0, casted.SizeInt())
-			types.ForEach(casted, func(id types.Object) bool {
-				id2, success := id.(*types.Identifer)
-				if success {
-					ids = append(ids, id2.Inner)
-				}
-				return success
-			})
-			types.ForEach(it2, func(value types.Object) bool {
-				it3, success := value.(types.Iterable)
-				if success {
-					it4 := it3.Iter()
-					for _, id := range ids {
-						value2, _ := it4.Next()
-						env.StoreStr(id, value2)
+			if casted.SizeInt() != 0 {
+				ids := extractIds(casted)
+				types.ForEach(it2, func(value types.Object) bool {
+					it3, success := value.(types.Iterable)
+					if success {
+						it4 := it3.Iter()
+						for _, id := range ids {
+							value2, _ := it4.Next()
+							env.StoreStr(id, value2)
+						}
+						evalBloc(bloc, res, env)
 					}
-					evalBloc(bloc, res, env)
-				}
-				return success
-			})
+					return success
+				})
+			}
+		}
+	}
+	return res
+}
+
+func whileForm(env types.Environment, args types.Iterable) types.Object {
+	res := types.NewList()
+	it := args.Iter()
+	arg0, _ := it.Next()
+	bloc := types.NewList()
+	bloc.AddAll(it)
+	if bloc.SizeInt() != 0 {
+		for {
+			condition, success := arg0.Eval(env).(types.Boolean)
+			if !success || !condition.Inner {
+				break
+			}
+			evalBloc(bloc, res, env)
 		}
 	}
 	return res

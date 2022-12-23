@@ -150,6 +150,7 @@ func initBuitins() types.BaseEnvironment {
 	// *Func indicate a normal function
 	base.StoreStr("If", types.MakeNativeAppliable(ifForm))
 	base.StoreStr("For", types.MakeNativeAppliable(forForm))
+	base.StoreStr("While", types.MakeNativeAppliable(whileForm))
 	base.StoreStr(parser.SetName, types.MakeNativeAppliable(setForm))
 	base.StoreStr(".", types.MakeNativeAppliable(getForm))
 	base.StoreStr("[]", types.MakeNativeAppliable(loadForm))
@@ -159,7 +160,8 @@ func initBuitins() types.BaseEnvironment {
 	base.StoreStr("Call", types.MakeNativeAppliable(callForm))
 	base.StoreStr("Macro", types.MakeNativeAppliable(macroForm))
 	// TODO init stuff
-	// List, Dict, Range, Enumerate, Add, Size, Iter, Next, AddAttribute, HasAttribute
+	// Quote, Unquote, type conversion
+	// List, Dict, Range, Enumerate, Add, Size, Del, Iter, Next, AddAttribute, HasAttribute
 	// And, Or, Not, ==, !=, >, >=, <, <=, +, -, *, /, //, %
 
 	// give parser package a protected copy to use in user custom rules
