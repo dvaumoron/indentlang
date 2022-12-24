@@ -181,7 +181,8 @@ type Identifer struct {
 }
 
 func (i *Identifer) Eval(env Environment) Object {
-	return env.LoadStr(i.Inner)
+	value, _ := env.LoadStr(i.Inner)
+	return value
 }
 
 func NewIdentifier(s string) *Identifer {

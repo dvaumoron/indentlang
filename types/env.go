@@ -24,7 +24,7 @@ type BaseEnvironment struct {
 	objects map[string]Object
 }
 
-func (b BaseEnvironment) LoadConfirm(key string) (Object, bool) {
+func (b BaseEnvironment) LoadStr(key string) (Object, bool) {
 	res, ok := b.objects[key]
 	if !ok {
 		res = None
@@ -32,22 +32,17 @@ func (b BaseEnvironment) LoadConfirm(key string) (Object, bool) {
 	return res, ok
 }
 
-func Load(env Environment, key Object) Object {
+func Load(env StringLoadable, key Object) Object {
 	str, ok := key.(*String)
 	var res Object = None
 	if ok {
-		res, _ = env.LoadConfirm(str.Inner)
+		res, _ = env.LoadStr(str.Inner)
 	}
 	return res
 }
 
 func (b BaseEnvironment) Load(key Object) Object {
 	return Load(b, key)
-}
-
-func (b BaseEnvironment) LoadStr(key string) Object {
-	res, _ := b.LoadConfirm(key)
-	return res
 }
 
 func (b BaseEnvironment) Store(key, value Object) {
@@ -87,21 +82,16 @@ type LocalEnvironment struct {
 	parent Environment
 }
 
-func (l *LocalEnvironment) LoadConfirm(key string) (Object, bool) {
-	res, ok := l.BaseEnvironment.LoadConfirm(key)
+func (l *LocalEnvironment) LoadStr(key string) (Object, bool) {
+	res, ok := l.BaseEnvironment.LoadStr(key)
 	if !ok {
-		res, ok = l.parent.LoadConfirm(key)
+		res, ok = l.parent.LoadStr(key)
 	}
 	return res, ok
 }
 
 func (l *LocalEnvironment) Load(key Object) Object {
 	return Load(l, key)
-}
-
-func (l *LocalEnvironment) LoadStr(key string) Object {
-	res, _ := l.LoadConfirm(key)
-	return res
 }
 
 func NewLocalEnvironment(env Environment) *LocalEnvironment {
@@ -113,21 +103,16 @@ type DataEnvironment struct {
 	Environment
 }
 
-func (d *DataEnvironment) LoadConfirm(key string) (Object, bool) {
+func (d *DataEnvironment) LoadStr(key string) (Object, bool) {
 	res, ok := d.loadData(key)
 	if !ok {
-		res, ok = d.Environment.LoadConfirm(key)
+		res, ok = d.Environment.LoadStr(key)
 	}
 	return res, ok
 }
 
 func (d *DataEnvironment) Load(key Object) Object {
 	return Load(d, key)
-}
-
-func (d *DataEnvironment) LoadStr(key string) Object {
-	res, _ := d.LoadConfirm(key)
-	return res
 }
 
 func NewDataEnvironment(data any, env Environment) *DataEnvironment {
@@ -150,21 +135,16 @@ type MergeEnvironment struct {
 	callEnv     Environment
 }
 
-func (m *MergeEnvironment) LoadConfirm(key string) (Object, bool) {
-	res, ok := m.creationEnv.LoadConfirm(key)
+func (m *MergeEnvironment) LoadStr(key string) (Object, bool) {
+	res, ok := m.creationEnv.LoadStr(key)
 	if !ok {
-		res, ok = m.callEnv.LoadConfirm(key)
+		res, ok = m.callEnv.LoadStr(key)
 	}
 	return res, ok
 }
 
 func (m *MergeEnvironment) Load(key Object) Object {
 	return Load(m, key)
-}
-
-func (m *MergeEnvironment) LoadStr(key string) Object {
-	res, _ := m.LoadConfirm(key)
-	return res
 }
 
 func (m *MergeEnvironment) Store(key, value Object) {

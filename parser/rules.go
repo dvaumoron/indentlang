@@ -28,16 +28,14 @@ const SetName = ":="
 
 var customRules = types.NewList()
 
-type wordParser func(string) (types.Object, bool)
-
-var wordParsers []wordParser
+var wordParsers []types.ConvertString
 
 // an empty environment to execute custom rules
 var BuiltinsCopy types.Environment = types.MakeBaseEnvironment()
 
 // needed to prevent a cycle in the initialisation
 func init() {
-	wordParsers = []wordParser{
+	wordParsers = []types.ConvertString{
 		parseTrue, parseFalse, parseNone, parseString, parseString2,
 		parseAttribute, parseList, parseInt, parseFloat,
 	}

@@ -51,9 +51,10 @@ func ParseFrom(path, str string) (*Template, error) {
 	if err == nil {
 		node.Eval(env)
 
-		main, ok := env.LoadStr(builtins.MainName).(types.Appliable)
+		main, _ := env.LoadStr(builtins.MainName)
+		mainAppliable, ok := main.(types.Appliable)
 		if ok {
-			tmpl = &Template{env: env, main: main}
+			tmpl = &Template{env: env, main: mainAppliable}
 		} else {
 			err = errors.New("the object Main is not an Appliable")
 		}

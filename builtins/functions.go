@@ -58,7 +58,8 @@ func (*noArgsKind) defaultRetrieveArgs(types.Environment, types.Environment, typ
 }
 
 func (n *noArgsKind) evalReturn(env types.Environment, local types.Environment) types.Object {
-	return n.evalObject(local.LoadStr(hiddenReturnName), env)
+	returnValue, _ := local.LoadStr(hiddenReturnName)
+	return n.evalObject(returnValue, env)
 }
 
 var functionKind = &noArgsKind{

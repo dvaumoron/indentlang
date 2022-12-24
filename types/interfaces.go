@@ -34,14 +34,13 @@ type Storable interface {
 }
 
 type StringLoadable interface {
-	LoadStr(string) Object
+	LoadStr(string) (Object, bool)
 }
 
 type Environment interface {
 	Storable
 	Delete(Object)
 	StringLoadable
-	LoadConfirm(string) (Object, bool)
 	StoreStr(string, Object)
 	DeleteStr(string)
 	CopyTo(Environment)

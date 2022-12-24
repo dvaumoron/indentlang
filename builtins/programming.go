@@ -152,7 +152,7 @@ func getForm(env types.Environment, args types.Iterable) types.Object {
 				var id *types.Identifer
 				id, ok = value.(*types.Identifer)
 				if ok {
-					res = current.LoadStr(id.Inner)
+					res, ok = current.LoadStr(id.Inner)
 				}
 			}
 			return ok

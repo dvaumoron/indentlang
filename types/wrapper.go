@@ -22,6 +22,8 @@ import (
 	"reflect"
 )
 
+type ConvertString func(string) (Object, bool)
+
 var stringType = reflect.TypeOf("")
 
 func indirect(value reflect.Value) (reflect.Value, bool) {
@@ -38,7 +40,7 @@ func neverConfirm(s string) (Object, bool) {
 	return None, false
 }
 
-func loadFromStruct(value reflect.Value) func(string) (Object, bool) {
+func loadFromStruct(value reflect.Value) ConvertString {
 	return func(fieldName string) (Object, bool) {
 		var res Object = None
 		field := value.FieldByName(fieldName)
@@ -50,7 +52,7 @@ func loadFromStruct(value reflect.Value) func(string) (Object, bool) {
 	}
 }
 
-func loadFromMap(value reflect.Value) func(string) (Object, bool) {
+func loadFromMap(value reflect.Value) ConvertString {
 	loadConfirm := neverConfirm
 	if stringType.AssignableTo(value.Type().Key()) {
 		loadConfirm = func(fieldName string) (Object, bool) {
@@ -68,21 +70,15 @@ func loadFromMap(value reflect.Value) func(string) (Object, bool) {
 
 type LoadWrapper struct {
 	NoneType
-	loadConfirm func(string) (Object, bool)
+	loadData ConvertString
 }
 
 func (w LoadWrapper) Load(key Object) Object {
-	var res Object = None
-	str, ok := key.(*String)
-	if ok {
-		res, _ = w.loadConfirm(str.Inner)
-	}
-	return res
+	return Load(w, key)
 }
 
-func (w LoadWrapper) LoadStr(s string) Object {
-	res, _ := w.loadConfirm(s)
-	return res
+func (w LoadWrapper) LoadStr(s string) (Object, bool) {
+	return w.loadData(s)
 }
 
 func valueToObject(value reflect.Value) Object {
@@ -114,9 +110,9 @@ func valueToObject(value reflect.Value) Object {
 			}
 			res = l
 		case reflect.Struct:
-			res = LoadWrapper{loadConfirm: loadFromStruct(value)}
+			res = LoadWrapper{loadData: loadFromStruct(value)}
 		case reflect.Map:
-			res = LoadWrapper{loadConfirm: loadFromMap(value)}
+			res = LoadWrapper{loadData: loadFromMap(value)}
 		}
 	}
 	return res
