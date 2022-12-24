@@ -30,13 +30,13 @@ func (l *List) Add(value Object) {
 
 // If the action func return false that break the loop.
 func ForEach(it Iterable, action func(Object) bool) {
-	exist := true
+	ok := true
 	it2 := it.Iter()
-	for exist {
+	for ok {
 		var value Object
-		value, exist = it2.Next()
-		if exist {
-			exist = action(value)
+		value, ok = it2.Next()
+		if ok {
+			ok = action(value)
 		}
 	}
 }
@@ -126,11 +126,11 @@ func (it *chanIterator) Iter() Iterator {
 }
 
 func (it *chanIterator) Next() (Object, bool) {
-	value, exist := <-it.receiver
-	if !exist {
+	value, ok := <-it.receiver
+	if !ok {
 		value = None
 	}
-	return value, exist
+	return value, ok
 }
 
 func (l *List) Iter() Iterator {
@@ -151,8 +151,8 @@ func WriteTo(it Iterable, w io.Writer) (int64, error) {
 	var err error
 	it2 := it.Iter()
 	for err == nil {
-		value, exist := it2.Next()
-		if !exist {
+		value, ok := it2.Next()
+		if !ok {
 			break
 		}
 		n2, err = value.WriteTo(w)
@@ -167,11 +167,11 @@ func (l *List) WriteTo(w io.Writer) (int64, error) {
 
 func (l *List) Eval(env Environment) Object {
 	it := l.Iter()
-	res, exist := it.Next()
-	if exist {
+	res, ok := it.Next()
+	if ok {
 		value0 := res.Eval(env)
-		if f, ok := value0.(Appliable); ok {
-			res = f.Apply(env, it)
+		if appliable, ok := value0.(Appliable); ok {
+			res = appliable.Apply(env, it)
 		} else {
 			l2 := &List{categories: l.categories.Copy(), inner: make([]Object, 0, len(l.inner))}
 			l2.Add(value0)

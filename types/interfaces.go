@@ -23,6 +23,7 @@ type Categorizable interface {
 	AddCategory(string)
 	HasCategory(string) bool
 }
+
 type Loadable interface {
 	Load(Object) Object
 }

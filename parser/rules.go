@@ -28,226 +28,168 @@ const SetName = ":="
 
 var customRules = types.NewList()
 
+type wordParser func(string) (types.Object, bool)
+
+var wordParsers []wordParser
+
+// an empty environment to execute custom rules
+var BuiltinsCopy types.Environment = types.MakeBaseEnvironment()
+
+// needed to prevent a cycle in the initialisation
 func init() {
-	customRules.Add(types.MakeNativeAppliable(constantRule))
-	customRules.Add(types.MakeNativeAppliable(listLiteralRule))
-	customRules.Add(types.MakeNativeAppliable(numberRule))
-	customRules.Add(types.MakeNativeAppliable(stringLiteralRule))
-	customRules.Add(types.MakeNativeAppliable(stringLiteralRule2))
-	customRules.Add(types.MakeNativeAppliable(attributeRule))
+	wordParsers = []wordParser{
+		parseTrue, parseFalse, parseNone, parseString, parseString2,
+		parseAttribute, parseList, parseInt, parseFloat,
+	}
 }
 
-func constantRule(env types.Environment, args types.Iterable) types.Object {
-	it := args.Iter()
-	arg0, ok := it.Next()
-	if ok {
-		var str *types.String
-		str, ok = arg0.(*types.String)
-		if ok {
-			if s := str.Inner; s == "true" {
-				var arg1 types.Object
-				arg1, ok = it.Next()
-				if ok {
-					var nodeList *types.List
-					nodeList, ok = arg1.(*types.List)
-					if ok {
-						nodeList.Add(types.True)
-					}
-				}
-			} else if s == "false" {
-				var arg1 types.Object
-				arg1, ok = it.Next()
-				if ok {
-					var nodeList *types.List
-					nodeList, ok = arg1.(*types.List)
-					if ok {
-						nodeList.Add(types.False)
-					}
-				}
-			} else if s == "None" {
-				var arg1 types.Object
-				arg1, ok = it.Next()
-				if ok {
-					var nodeList *types.List
-					nodeList, ok = arg1.(*types.List)
-					if ok {
-						nodeList.Add(types.None)
-					}
-				}
-			}
+func handleWord(words <-chan string, listStack stack[*types.List], done chan<- types.NoneType) {
+	for word := range words {
+		if word == "(" {
+			manageOpen(listStack)
+		} else if word == ")" {
+			listStack.pop()
+		} else {
+			handleClassicWord(word, listStack.peek())
 		}
 	}
-	return types.MakeBoolean(ok)
+	done <- types.None
 }
 
-func listLiteralRule(env types.Environment, args types.Iterable) types.Object {
-	it := args.Iter()
-	arg0, ok := it.Next()
-	if ok {
-		var str *types.String
-		str, ok = arg0.(*types.String)
-		if ok {
-			s := str.Inner
-			if s != SetName && strings.Contains(s, ":") {
-				var arg1 types.Object
-				arg1, ok = it.Next()
-				if ok {
-					var nodeList *types.List
-					nodeList, ok = arg1.(*types.List)
-					if ok {
-						nodeList2 := types.NewList()
-						nodeList.Add(nodeList2)
-						nodeList2.Add(ListId)
-						for _, elem := range strings.Split(s, ":") {
-							if elem == "" {
-								nodeList2.Add(types.None)
-							} else if handleCustomWord(elem, nodeList2) {
-								nodeList2.Add(types.NewIdentifier(elem))
-							}
-						}
-					}
-				}
+func handleClassicWord(word string, list *types.List) {
+	if !nativeRules(word, list) {
+		args := types.NewList()
+		args.Add(types.NewString(word))
+		args.Add(list)
+		res := true
+		types.ForEach(customRules, func(object types.Object) bool {
+			rule, ok := object.(types.Appliable)
+			if ok {
+				// The Apply must return true if it has created the node.
+				boolean, ok := rule.Apply(BuiltinsCopy, args).(types.Boolean)
+				res = !(ok && boolean.Inner)
 			}
+			return res
+		})
+		if res {
+			list.Add(types.NewIdentifier(word))
 		}
 	}
-	return types.MakeBoolean(ok)
 }
 
-func numberRule(env types.Environment, args types.Iterable) types.Object {
-	it := args.Iter()
-	arg0, ok := it.Next()
-	if ok {
-		var str *types.String
-		str, ok = arg0.(*types.String)
+func nativeRules(word string, list *types.List) bool {
+	ok := false
+	for _, parser := range wordParsers {
+		var node types.Object
+		node, ok = parser(word)
 		if ok {
-			s := str.Inner
-			i, err := strconv.ParseInt(s, 10, 64)
-			if err == nil {
-				var arg1 types.Object
-				arg1, ok = it.Next()
-				if ok {
-					var nodeList *types.List
-					nodeList, ok = arg1.(*types.List)
-					if ok {
-						nodeList.Add(types.NewInteger(i))
-					}
-				}
-			} else {
-				f, err := strconv.ParseFloat(s, 64)
-				if err == nil {
-					var arg1 types.Object
-					arg1, ok = it.Next()
-					if ok {
-						var nodeList *types.List
-						nodeList, ok = arg1.(*types.List)
-						if ok {
-							nodeList.Add(types.NewFloat(f))
-						}
-					}
+			list.Add(node)
+			break
+		}
+	}
+	return ok
+}
+
+func parseTrue(word string) (types.Object, bool) {
+	return types.True, word == "true"
+}
+
+func parseFalse(word string) (types.Object, bool) {
+	return types.False, word == "false"
+}
+
+func parseNone(word string) (types.Object, bool) {
+	return types.None, word == "None"
+}
+
+func parseString(word string) (types.Object, bool) {
+	var res types.Object = types.None
+	ok := word[0] == '"'
+	if ok {
+		extracted := strings.ReplaceAll(word[1:len(word)-1], "\\'", "'")
+		res = types.NewString(extracted)
+	}
+	return res, ok
+}
+
+func parseString2(word string) (types.Object, bool) {
+	var res types.Object = types.None
+	ok := word[0] == '\''
+	if ok {
+		skipApos := false
+		size := len(word)
+		extracted := make([]rune, 0, size)
+		for _, char := range word[1 : size-1] {
+			if skipApos {
+				skipApos = false
+				if char == '\'' {
+					extracted = append(extracted, char)
 				} else {
-					ok = false
+					extracted = append(extracted, '\\', char)
 				}
+			} else if char == '"' {
+				extracted = append(extracted, '\\', char)
+			} else if char == '\\' {
+				skipApos = true
+			} else {
+				extracted = append(extracted, char)
 			}
 		}
+		res = types.NewString(string(extracted))
 	}
-	return types.MakeBoolean(ok)
+	return res, ok
 }
 
-func stringLiteralRule(env types.Environment, args types.Iterable) types.Object {
-	it := args.Iter()
-	arg0, ok := it.Next()
+func parseAttribute(word string) (types.Object, bool) {
+	var res types.Object = types.None
+	ok := word[0] == '@'
 	if ok {
-		var str *types.String
-		str, ok = arg0.(*types.String)
-		if ok {
-			if s := str.Inner; s[0] == '"' {
-				var arg1 types.Object
-				arg1, ok = it.Next()
-				if ok {
-					var nodeList *types.List
-					nodeList, ok = arg1.(*types.List)
-					if ok {
-						s = strings.ReplaceAll(s[1:len(s)-1], "\\'", "'")
-						nodeList.Add(types.NewString(s))
-					}
-				}
-			}
+		elems := strings.Split(word[1:], "=")
+		attr := types.NewList()
+		attr.AddCategory(AttributeName)
+		attr.Add(types.NewString(elems[0]))
+		if len(elems) > 1 {
+			handleClassicWord(elems[1], attr)
 		}
+		res = attr
 	}
-	return types.MakeBoolean(ok)
+	return res, ok
 }
 
-func stringLiteralRule2(env types.Environment, args types.Iterable) types.Object {
-	it := args.Iter()
-	arg0, ok := it.Next()
+func parseList(word string) (types.Object, bool) {
+	var res types.Object = types.None
+	ok := word != SetName && strings.Contains(word, ":")
 	if ok {
-		var str *types.String
-		str, ok = arg0.(*types.String)
-		if ok {
-			if s := str.Inner; s[0] == '\'' {
-				var arg1 types.Object
-				arg1, ok = it.Next()
-				if ok {
-					var nodeList *types.List
-					nodeList, ok = arg1.(*types.List)
-					if ok {
-						skipApos := false
-						size := len(s)
-						s2 := make([]rune, 0, size)
-						for _, char := range s[1 : size-1] {
-							if skipApos {
-								skipApos = false
-								if char == '\'' {
-									s2 = append(s2, char)
-								} else {
-									s2 = append(s2, '\\', char)
-								}
-							} else if char == '"' {
-								s2 = append(s2, '\\', char)
-							} else if char == '\\' {
-								skipApos = true
-							} else {
-								s2 = append(s2, char)
-							}
-						}
-						nodeList.Add(types.NewString(string(s2)))
-					}
-				}
+		nodeList := types.NewList()
+		nodeList.Add(ListId)
+		for _, elem := range strings.Split(word, ":") {
+			if elem == "" {
+				nodeList.Add(types.None)
+			} else {
+				handleClassicWord(elem, nodeList)
 			}
 		}
+		res = nodeList
 	}
-	return types.MakeBoolean(ok)
+	return res, ok
 }
 
-func attributeRule(env types.Environment, args types.Iterable) types.Object {
-	it := args.Iter()
-	arg0, ok := it.Next()
+func parseInt(word string) (types.Object, bool) {
+	i, err := strconv.ParseInt(word, 10, 64)
+	var res types.Object = types.None
+	ok := err == nil
 	if ok {
-		var str *types.String
-		str, ok = arg0.(*types.String)
-		if ok {
-			if s := str.Inner; s[0] == '@' && len(s) > 1 {
-				var arg1 types.Object
-				arg1, ok = it.Next()
-				if ok {
-					var nodeList *types.List
-					nodeList, ok = arg1.(*types.List)
-					if ok {
-						elems := strings.Split(s[1:], "=")
-						attr := types.NewList()
-						attr.AddCategory(AttributeName)
-						attr.Add(types.NewString(elems[0]))
-						if len(elems) > 1 {
-							elem := elems[1]
-							if handleCustomWord(elem, attr) {
-								attr.Add(types.NewIdentifier(elem))
-							}
-						}
-						nodeList.Add(attr)
-					}
-				}
-			}
-		}
+		res = types.NewInteger(i)
 	}
-	return types.MakeBoolean(ok)
+	return res, ok
+}
+
+func parseFloat(word string) (types.Object, bool) {
+	f, err := strconv.ParseFloat(word, 64)
+	var res types.Object = types.None
+	ok := err == nil
+	if ok {
+		res = types.NewFloat(f)
+	}
+	return res, ok
 }

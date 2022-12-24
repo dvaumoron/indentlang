@@ -50,8 +50,8 @@ func (c categories) AddCategory(category string) {
 }
 
 func (c categories) HasCategory(category string) bool {
-	_, exist := c.categorySet[category]
-	return exist
+	_, ok := c.categorySet[category]
+	return ok
 }
 
 func (c categories) Copy() categories {

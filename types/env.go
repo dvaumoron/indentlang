@@ -79,8 +79,7 @@ func MakeBaseEnvironment() BaseEnvironment {
 }
 
 type LocalEnvironment struct {
-	NoneType
-	local  BaseEnvironment
+	BaseEnvironment
 	parent Environment
 }
 
@@ -94,41 +93,20 @@ func (l *LocalEnvironment) Load(key Object) Object {
 }
 
 func (l *LocalEnvironment) LoadStr(key string) Object {
-	res, exist := l.local.loadConfirm(key)
-	if !exist {
+	res, ok := l.loadConfirm(key)
+	if !ok {
 		res = l.parent.LoadStr(key)
 	}
 	return res
 }
 
-func (l *LocalEnvironment) Store(key, value Object) {
-	l.local.Store(key, value)
-}
-
-func (l *LocalEnvironment) StoreStr(key string, value Object) {
-	l.local.StoreStr(key, value)
-}
-
-func (l *LocalEnvironment) Delete(key Object) {
-	l.local.Delete(key)
-}
-
-func (l *LocalEnvironment) DeleteStr(key string) {
-	l.local.DeleteStr(key)
-}
-
-func (l *LocalEnvironment) CopyTo(other Environment) {
-	l.local.CopyTo(other)
-}
-
 func NewLocalEnvironment(env Environment) *LocalEnvironment {
-	return &LocalEnvironment{local: MakeBaseEnvironment(), parent: env}
+	return &LocalEnvironment{BaseEnvironment: MakeBaseEnvironment(), parent: env}
 }
 
 type DataEnvironment struct {
-	NoneType
 	loadConfirm func(string) (Object, bool)
-	parent      Environment
+	Environment
 }
 
 func (d *DataEnvironment) Load(key Object) Object {
@@ -141,31 +119,11 @@ func (d *DataEnvironment) Load(key Object) Object {
 }
 
 func (d *DataEnvironment) LoadStr(key string) Object {
-	res, exist := d.loadConfirm(key)
-	if !exist {
-		res = d.parent.LoadStr(key)
+	res, ok := d.loadConfirm(key)
+	if !ok {
+		res = d.Environment.LoadStr(key)
 	}
 	return res
-}
-
-func (d *DataEnvironment) Store(key, value Object) {
-	d.parent.Store(key, value)
-}
-
-func (d *DataEnvironment) StoreStr(key string, value Object) {
-	d.parent.StoreStr(key, value)
-}
-
-func (d *DataEnvironment) Delete(key Object) {
-	d.parent.Delete(key)
-}
-
-func (d *DataEnvironment) DeleteStr(key string) {
-	d.parent.DeleteStr(key)
-}
-
-func (d *DataEnvironment) CopyTo(other Environment) {
-	d.parent.CopyTo(other)
 }
 
 func NewDataEnvironment(data any, env Environment) *DataEnvironment {
@@ -187,5 +145,5 @@ func NewDataEnvironment(data any, env Environment) *DataEnvironment {
 			loadConfirm = neverConfirm
 		}
 	}
-	return &DataEnvironment{loadConfirm: loadConfirm, parent: env}
+	return &DataEnvironment{loadConfirm: loadConfirm, Environment: env}
 }

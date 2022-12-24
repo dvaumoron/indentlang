@@ -212,12 +212,12 @@ func CreateHtmlElement(name string) types.NativeAppliable {
 			attr, ok := value.(types.Iterable)
 			if ok {
 				itAttr := attr.Iter()
-				attrName, exist := itAttr.Next()
-				if exist {
+				attrName, ok := itAttr.Next()
+				if ok {
 					res.Add(space)
 					res.Add(attrName)
-					attrValue, exist := itAttr.Next()
-					if exist {
+					attrValue, ok := itAttr.Next()
+					if ok {
 						res.Add(equalQuote)
 						res.Add(attrValue)
 						res.Add(quote)

@@ -55,9 +55,9 @@ func Parse(str string) (*types.List, error) {
 	res := types.NewList()
 	res.Add(ListId)
 	listStack.push(res)
-	lines := strings.Split(str, "\n")
+	var err error
 LineLoop:
-	for _, line := range lines {
+	for _, line := range strings.Split(str, "\n") {
 		if trimmed := strings.TrimSpace(line); trimmed != "" && trimmed[0] != '#' {
 			var index int
 			var char rune
@@ -65,14 +65,10 @@ LineLoop:
 				if char != ' ' && char != '\t' {
 					if top := indentStack.peek(); top < index {
 						indentStack.push(index)
-						current := types.NewList()
-						listStack.peek().Add(current)
-						listStack.push(current)
+						manageOpen(listStack)
 					} else if top == index {
 						listStack.pop()
-						current := types.NewList()
-						listStack.peek().Add(current)
-						listStack.push(current)
+						manageOpen(listStack)
 					} else {
 						indentStack.pop()
 						listStack.pop()
@@ -81,7 +77,8 @@ LineLoop:
 							listStack.pop()
 						}
 						if top < index {
-							return nil, errors.New("identation not consistent")
+							err = errors.New("identation not consistent")
+							break LineLoop
 						}
 					}
 					break
@@ -101,15 +98,13 @@ LineLoop:
 					buildingWord = sendReset(words, buildingWord)
 					words <- string(char)
 				case '"', '\'':
-					buildingWord = append(buildingWord, char)
-					var err error
 					buildingWord, err = readUntil(buildingWord, chars, char)
 					if err != nil {
-						return nil, err
+						break LineLoop
 					}
 				case '#':
 					finishLine(words, buildingWord, done)
-					break LineLoop
+					continue LineLoop
 				default:
 					buildingWord = append(buildingWord, char)
 				}
@@ -117,44 +112,13 @@ LineLoop:
 			finishLine(words, buildingWord, done)
 		}
 	}
-	return res, nil
+	return res, err
 }
 
-func handleWord(words <-chan string, listStack stack[*types.List], done chan<- types.NoneType) {
-	for word := range words {
-		if word == "(" {
-			current := types.NewList()
-			listStack.peek().Add(current)
-			listStack.push(current)
-		} else if word == ")" {
-			listStack.pop()
-		} else if handleCustomWord(word, listStack.peek()) {
-			listStack.peek().Add(types.NewIdentifier(word))
-		}
-	}
-	done <- types.None
-}
-
-// an empty environment to execute custom rules
-var BuiltinsCopy types.Environment = types.MakeBaseEnvironment()
-
-// Counter intuitive : return true when nothing have been done
-func handleCustomWord(word string, list *types.List) bool {
-	args := types.NewList()
-	args.Add(types.NewString(word))
-	args.Add(list)
-	args.Add(customRules)
-	res := true
-	types.ForEach(customRules, func(object types.Object) bool {
-		rule, ok := object.(types.Appliable)
-		if ok {
-			// The Apply must return true if it has created the node.
-			boolean, ok := rule.Apply(BuiltinsCopy, args).(types.Boolean)
-			res = !(ok && boolean.Inner)
-		}
-		return res
-	})
-	return res
+func manageOpen(listStack stack[*types.List]) {
+	current := types.NewList()
+	listStack.peek().Add(current)
+	listStack.push(current)
 }
 
 func sendChar(chars chan<- rune, line string) {
@@ -174,22 +138,22 @@ func sendReset(words chan<- string, buildingWord []rune) []rune {
 }
 
 func readUntil(buildingWord []rune, chars <-chan rune, delim rune) ([]rune, error) {
-	char, exist := <-chars
-	for exist {
+	unended := true
+	buildingWord = append(buildingWord, delim)
+	for char := range chars {
 		buildingWord = append(buildingWord, char)
 		if char == delim {
+			unended = false
 			break
 		} else if char == '\\' {
-			char, exist = <-chars
-			if exist {
-				buildingWord = append(buildingWord, char)
-			} else {
-				return nil, errors.New("unended string")
-			}
+			buildingWord = append(buildingWord, <-chars)
 		}
-		char, exist = <-chars
 	}
-	return buildingWord, nil
+	var err error
+	if unended {
+		err = errors.New("unended string")
+	}
+	return buildingWord, err
 }
 
 func finishLine(words chan<- string, buildingWord []rune, done <-chan types.NoneType) {
