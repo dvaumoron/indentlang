@@ -25,12 +25,13 @@ import (
 var stringType = reflect.TypeOf("")
 
 func indirect(value reflect.Value) (reflect.Value, bool) {
+	isNil := false
 	for ; value.Kind() == reflect.Pointer || value.Kind() == reflect.Interface; value = value.Elem() {
-		if value.IsNil() {
-			return value, true
+		if isNil = value.IsNil(); isNil {
+			break
 		}
 	}
-	return value, false
+	return value, isNil
 }
 
 func neverConfirm(s string) (Object, bool) {
@@ -38,32 +39,31 @@ func neverConfirm(s string) (Object, bool) {
 }
 
 func loadFromStruct(value reflect.Value) func(string) (Object, bool) {
-	vType := value.Type()
 	return func(fieldName string) (Object, bool) {
 		var res Object = None
-		fType, ok := vType.FieldByName(fieldName)
-		if ok && fType.IsExported() {
-			field, err := value.FieldByIndexErr(fType.Index)
-			if err == nil {
-				res = valueToObject(field)
-			} else {
-				ok = false
-			}
+		field := value.FieldByName(fieldName)
+		ok := field.IsValid()
+		if ok {
+			res = valueToObject(field)
 		}
 		return res, ok
 	}
 }
 
 func loadFromMap(value reflect.Value) func(string) (Object, bool) {
-	return func(fieldName string) (Object, bool) {
-		var res Object = None
-		resValue := value.MapIndex(reflect.ValueOf(fieldName))
-		ok := resValue.IsValid()
-		if ok {
-			res = valueToObject(resValue)
+	loadConfirm := neverConfirm
+	if stringType.AssignableTo(value.Type().Key()) {
+		loadConfirm = func(fieldName string) (Object, bool) {
+			var res Object = None
+			resValue := value.MapIndex(reflect.ValueOf(fieldName))
+			ok := resValue.IsValid()
+			if ok {
+				res = valueToObject(resValue)
+			}
+			return res, ok
 		}
-		return res, ok
 	}
+	return loadConfirm
 }
 
 type LoadWrapper struct {
@@ -116,9 +116,7 @@ func valueToObject(value reflect.Value) Object {
 		case reflect.Struct:
 			res = LoadWrapper{loadConfirm: loadFromStruct(value)}
 		case reflect.Map:
-			if stringType.AssignableTo(value.Type().Key()) {
-				res = LoadWrapper{loadConfirm: loadFromMap(value)}
-			}
+			res = LoadWrapper{loadConfirm: loadFromMap(value)}
 		}
 	}
 	return res

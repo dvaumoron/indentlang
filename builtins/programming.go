@@ -73,6 +73,18 @@ func forForm(env types.Environment, args types.Iterable) types.Object {
 	return res
 }
 
+func extractIds(l *types.List) []string {
+	ids := make([]string, 0, l.SizeInt())
+	types.ForEach(l, func(value types.Object) bool {
+		id, ok := value.(*types.Identifer)
+		if ok {
+			ids = append(ids, id.Inner)
+		}
+		return ok
+	})
+	return ids
+}
+
 func whileForm(env types.Environment, args types.Iterable) types.Object {
 	res := types.NewList()
 	it := args.Iter()
@@ -114,11 +126,11 @@ func setForm(env types.Environment, args types.Iterable) types.Object {
 			it2, ok := arg1.Eval(env).(types.Iterable)
 			if ok {
 				it3 := it2.Iter()
-				types.ForEach(casted, func(id types.Object) bool {
-					id2, ok := id.(*types.Identifer)
+				types.ForEach(casted, func(value types.Object) bool {
+					id, ok := value.(*types.Identifer)
 					if ok {
 						value, _ := it3.Next()
-						env.StoreStr(id2.Inner, value)
+						env.StoreStr(id.Inner, value)
 					}
 					return ok
 				})
@@ -193,4 +205,13 @@ func storeFunc(env types.Environment, args types.Iterable) types.Object {
 		}
 	}
 	return types.None
+}
+
+func evalIterable(args types.Iterable, env types.Environment) *types.List {
+	evaluated := types.NewList()
+	types.ForEach(args, func(value types.Object) bool {
+		evaluated.Add(value.Eval(env))
+		return true
+	})
+	return evaluated
 }

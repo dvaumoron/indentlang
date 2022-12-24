@@ -41,6 +41,7 @@ type Environment interface {
 	Storable
 	Delete(Object)
 	StringLoadable
+	LoadConfirm(string) (Object, bool)
 	StoreStr(string, Object)
 	DeleteStr(string)
 	CopyTo(Environment)
@@ -73,4 +74,5 @@ type Iterable interface {
 
 type Appliable interface {
 	Apply(Environment, Iterable) Object
+	ApplyWithData(any, Environment, Iterable) Object
 }

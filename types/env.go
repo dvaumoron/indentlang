@@ -24,7 +24,7 @@ type BaseEnvironment struct {
 	objects map[string]Object
 }
 
-func (b BaseEnvironment) loadConfirm(key string) (Object, bool) {
+func (b BaseEnvironment) LoadConfirm(key string) (Object, bool) {
 	res, ok := b.objects[key]
 	if !ok {
 		res = None
@@ -32,17 +32,21 @@ func (b BaseEnvironment) loadConfirm(key string) (Object, bool) {
 	return res, ok
 }
 
-func (b BaseEnvironment) Load(key Object) Object {
+func Load(env Environment, key Object) Object {
 	str, ok := key.(*String)
 	var res Object = None
 	if ok {
-		res, _ = b.loadConfirm(str.Inner)
+		res, _ = env.LoadConfirm(str.Inner)
 	}
 	return res
 }
 
+func (b BaseEnvironment) Load(key Object) Object {
+	return Load(b, key)
+}
+
 func (b BaseEnvironment) LoadStr(key string) Object {
-	res, _ := b.loadConfirm(key)
+	res, _ := b.LoadConfirm(key)
 	return res
 }
 
@@ -83,20 +87,20 @@ type LocalEnvironment struct {
 	parent Environment
 }
 
-func (l *LocalEnvironment) Load(key Object) Object {
-	str, ok := key.(*String)
-	var res Object = None
-	if ok {
-		res = l.LoadStr(str.Inner)
+func (l *LocalEnvironment) LoadConfirm(key string) (Object, bool) {
+	res, ok := l.BaseEnvironment.LoadConfirm(key)
+	if !ok {
+		res, ok = l.parent.LoadConfirm(key)
 	}
-	return res
+	return res, ok
+}
+
+func (l *LocalEnvironment) Load(key Object) Object {
+	return Load(l, key)
 }
 
 func (l *LocalEnvironment) LoadStr(key string) Object {
-	res, ok := l.loadConfirm(key)
-	if !ok {
-		res = l.parent.LoadStr(key)
-	}
+	res, _ := l.LoadConfirm(key)
 	return res
 }
 
@@ -105,45 +109,79 @@ func NewLocalEnvironment(env Environment) *LocalEnvironment {
 }
 
 type DataEnvironment struct {
-	loadConfirm func(string) (Object, bool)
+	loadData func(string) (Object, bool)
 	Environment
 }
 
-func (d *DataEnvironment) Load(key Object) Object {
-	str, ok := key.(*String)
-	var res Object = None
-	if ok {
-		res = d.LoadStr(str.Inner)
+func (d *DataEnvironment) LoadConfirm(key string) (Object, bool) {
+	res, ok := d.loadData(key)
+	if !ok {
+		res, ok = d.Environment.LoadConfirm(key)
 	}
-	return res
+	return res, ok
+}
+
+func (d *DataEnvironment) Load(key Object) Object {
+	return Load(d, key)
 }
 
 func (d *DataEnvironment) LoadStr(key string) Object {
-	res, ok := d.loadConfirm(key)
-	if !ok {
-		res = d.Environment.LoadStr(key)
-	}
+	res, _ := d.LoadConfirm(key)
 	return res
 }
 
 func NewDataEnvironment(data any, env Environment) *DataEnvironment {
-	var loadConfirm func(string) (Object, bool)
+	loadConfirm := neverConfirm
 	dataValue, isNil := indirect(reflect.ValueOf(data))
-	if isNil {
-		loadConfirm = neverConfirm
-	} else {
+	if !isNil {
 		switch dataValue.Kind() {
 		case reflect.Struct:
 			loadConfirm = loadFromStruct(dataValue)
 		case reflect.Map:
-			if stringType.AssignableTo(dataValue.Type().Key()) {
-				loadConfirm = loadFromMap(dataValue)
-			} else {
-				loadConfirm = neverConfirm
-			}
-		default:
-			loadConfirm = neverConfirm
+			loadConfirm = loadFromMap(dataValue)
 		}
 	}
-	return &DataEnvironment{loadConfirm: loadConfirm, Environment: env}
+	return &DataEnvironment{loadData: loadConfirm, Environment: env}
+}
+
+// Read only : all non Load* methods ore no-op.
+type MergeEnvironment struct {
+	creationEnv Environment
+	callEnv     Environment
+}
+
+func (m *MergeEnvironment) LoadConfirm(key string) (Object, bool) {
+	res, ok := m.creationEnv.LoadConfirm(key)
+	if !ok {
+		res, ok = m.callEnv.LoadConfirm(key)
+	}
+	return res, ok
+}
+
+func (m *MergeEnvironment) Load(key Object) Object {
+	return Load(m, key)
+}
+
+func (m *MergeEnvironment) LoadStr(key string) Object {
+	res, _ := m.LoadConfirm(key)
+	return res
+}
+
+func (m *MergeEnvironment) Store(key, value Object) {
+}
+
+func (m *MergeEnvironment) StoreStr(key string, value Object) {
+}
+
+func (m *MergeEnvironment) Delete(key Object) {
+}
+
+func (m *MergeEnvironment) DeleteStr(key string) {
+}
+
+func (m *MergeEnvironment) CopyTo(other Environment) {
+}
+
+func NewMergeEnvironment(creationEnv, callEnv Environment) *MergeEnvironment {
+	return &MergeEnvironment{creationEnv: creationEnv, callEnv: callEnv}
 }
