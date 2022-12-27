@@ -48,13 +48,18 @@ func (s *stack[T]) pop() T {
 	return res
 }
 
+func newStack[T any]() *stack[T] {
+	return &stack[T]{}
+}
+
 func Parse(str string) (*types.List, error) {
-	var indentStack stack[int]
+	indentStack := newStack[int]()
 	indentStack.push(0)
-	var listStack stack[*types.List]
+	listStack := newStack[*types.List]()
 	res := types.NewList()
 	res.Add(ListId)
 	listStack.push(res)
+	manageOpen(listStack)
 	var err error
 LineLoop:
 	for _, line := range strings.Split(str, "\n") {
@@ -80,6 +85,8 @@ LineLoop:
 							err = errors.New("identation not consistent")
 							break LineLoop
 						}
+						listStack.pop()
+						manageOpen(listStack)
 					}
 					break
 				}
@@ -115,7 +122,7 @@ LineLoop:
 	return res, err
 }
 
-func manageOpen(listStack stack[*types.List]) {
+func manageOpen(listStack *stack[*types.List]) {
 	current := types.NewList()
 	listStack.peek().Add(current)
 	listStack.push(current)

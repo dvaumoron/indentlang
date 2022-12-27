@@ -41,7 +41,7 @@ func init() {
 	}
 }
 
-func handleWord(words <-chan string, listStack stack[*types.List], done chan<- types.NoneType) {
+func handleWord(words <-chan string, listStack *stack[*types.List], done chan<- types.NoneType) {
 	for word := range words {
 		if word == "(" {
 			manageOpen(listStack)

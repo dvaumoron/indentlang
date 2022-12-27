@@ -21,8 +21,9 @@ import "github.com/dvaumoron/indentlang/types"
 
 func ifForm(env types.Environment, args types.Iterable) types.Object {
 	it := args.Iter()
-	res, _ := it.Next()
-	test, ok := res.Eval(env).(types.Boolean)
+	arg0, _ := it.Next()
+	var res types.Object = types.None
+	test, ok := arg0.Eval(env).(types.Boolean)
 	if ok {
 		arg1, _ := it.Next()
 		if test.Inner {
