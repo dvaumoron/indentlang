@@ -20,9 +20,10 @@ package template
 import (
 	"errors"
 	"io"
+	"path/filepath"
+	"strings"
 
 	"github.com/dvaumoron/indentlang/builtins"
-	"github.com/dvaumoron/indentlang/parser"
 	"github.com/dvaumoron/indentlang/types"
 )
 
@@ -36,28 +37,37 @@ func (t *Template) Execute(w io.Writer, data any) error {
 	return err
 }
 
-func Parse(str string) (*Template, error) {
-	return ParseFrom("", str)
-}
-
-func ParseFrom(path, str string) (*Template, error) {
-	env := types.NewLocalEnvironment(builtins.Builtins)
-	if path != "" {
-		env.StoreStr(builtins.ImportName, builtins.MakeImportDirective(path))
+func ParsePath(path string) (*Template, error) {
+	path, err := filepath.Abs(path)
+	if err != nil {
+		return nil, err
 	}
 
-	var tmpl *Template
-	node, err := parser.Parse(str)
-	if err == nil {
-		node.Eval(env)
+	splitIndex := strings.LastIndex(path, "/") + 1
+	basePath, fileName := path[:splitIndex], path[splitIndex:]
+	return ParseFrom(builtins.MakeImportDirective(basePath), fileName)
+}
 
-		main, _ := env.LoadStr(builtins.MainName)
-		mainAppliable, ok := main.(types.Appliable)
+func ParseFrom(importDirective types.Appliable, filePath string) (*Template, error) {
+	env := types.NewLocalEnvironment(builtins.Builtins)
+
+	args := types.NewList()
+	args.Add(types.NewString(filePath))
+	importDirective.Apply(env, args)
+
+	var tmpl *Template
+	var err error
+	main, ok := env.LoadStr(builtins.MainName)
+	if ok {
+		var mainAppliable types.Appliable
+		mainAppliable, ok = main.(types.Appliable)
 		if ok {
 			tmpl = &Template{env: env, main: mainAppliable}
 		} else {
 			err = errors.New("the object Main is not an Appliable")
 		}
+	} else {
+		err = errors.New("cannot load object Main")
 	}
 	return tmpl, err
 }

@@ -49,10 +49,11 @@ func init() {
 }
 
 type moduleCacheValue struct {
-	env     types.Environment
-	waiting []chan<- types.Environment
+	env      types.Environment
+	waitings []chan<- types.Environment
 }
 
+// don't need mutex (only one coroutine access it)
 var moduleCache = map[string]moduleCacheValue{}
 
 func importer(requestReceiver <-chan importRequest, responseReceiver <-chan importResponse) {
@@ -63,21 +64,24 @@ func importer(requestReceiver <-chan importRequest, responseReceiver <-chan impo
 			totalPath := basePath + request.filePath
 			value := moduleCache[totalPath]
 			if env := value.env; env == nil {
-				list := value.waiting
-				if len(list) == 0 {
+				waitings := value.waitings
+				if len(waitings) == 0 {
 					// import non existing
 					go innerImporter(basePath, totalPath)
 				}
-				value.waiting = append(list, request.responder)
+				value.waitings = append(waitings, request.responder)
 				moduleCache[totalPath] = value
 			} else {
+				responder := request.responder
 				request.responder <- env
+				close(responder)
 			}
 		case response := <-responseReceiver:
 			path := response.path
 			env := response.env
-			for _, responder := range moduleCache[path].waiting {
+			for _, responder := range moduleCache[path].waitings {
 				responder <- env
+				close(responder)
 			}
 			// save the computed env & reset the list of waiting
 			moduleCache[path] = moduleCacheValue{env: env}
@@ -89,7 +93,7 @@ const ImportName = "Import"
 
 func innerImporter(basePath, totalPath string) {
 	env := types.NewLocalEnvironment(Builtins)
-	env.StoreStr(ImportName, MakeImportDirective(basePath))
+	env.StoreStr(ImportName, makeCheckedImportDirective(basePath))
 	tmplData, err := os.ReadFile(totalPath)
 	if err == nil {
 		var node types.Object
@@ -109,7 +113,11 @@ var directiveMutex sync.RWMutex
 var directiveCache = map[string]types.NativeAppliable{}
 
 func MakeImportDirective(basePath string) types.NativeAppliable {
-	basePath = CheckPath(basePath)
+	return makeCheckedImportDirective(CheckPath(basePath))
+}
+
+// internal version where basePath must end with a "/"
+func makeCheckedImportDirective(basePath string) types.NativeAppliable {
 	directiveMutex.RLock()
 	res, ok := directiveCache[basePath]
 	directiveMutex.RUnlock()
@@ -139,6 +147,7 @@ func MakeImportDirective(basePath string) types.NativeAppliable {
 	return res
 }
 
+// add an ending "/" if necessary
 func CheckPath(path string) string {
 	if path[len(path)-1] != '/' {
 		path += "/"

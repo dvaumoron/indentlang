@@ -72,6 +72,7 @@ type Iterable interface {
 }
 
 type Appliable interface {
+	Object
 	Apply(Environment, Iterable) Object
 	ApplyWithData(any, Environment, Iterable) Object
 }

@@ -31,13 +31,7 @@ func main() {
 	tmplPath := args[1]
 	outPath := args[2]
 
-	tmplBody, err := os.ReadFile(tmplPath)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	tmpl, err := template.Parse(string(tmplBody))
+	tmpl, err := template.ParsePath(tmplPath)
 	if err != nil {
 		fmt.Println(err)
 		return

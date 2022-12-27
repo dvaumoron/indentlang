@@ -99,7 +99,7 @@ func NewLocalEnvironment(env Environment) *LocalEnvironment {
 }
 
 type DataEnvironment struct {
-	loadData func(string) (Object, bool)
+	loadData ConvertString
 	Environment
 }
 

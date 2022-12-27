@@ -20,7 +20,6 @@ package adapter
 import (
 	"io/fs"
 	"net/http"
-	"os"
 	"path/filepath"
 
 	"github.com/dvaumoron/indentlang/builtins"
@@ -65,22 +64,21 @@ func (r IndentlangHTMLRender) Instance(name string, data any) render.Render {
 
 // Use this method to init the HTMLRender in a gin Engine.
 func LoadTemplates(templatesPath string) IndentlangHTMLRender {
+	templatesPath, err := filepath.Abs(templatesPath)
 	templatesPath = builtins.CheckPath(templatesPath)
+
+	importDirective := builtins.MakeImportDirective(templatesPath)
 
 	templates := map[string]*template.Template{}
 	inSize := len(templatesPath)
-	err := filepath.WalkDir(templatesPath, func(path string, d fs.DirEntry, err error) error {
+	err = filepath.WalkDir(templatesPath, func(path string, d fs.DirEntry, err error) error {
 		if err == nil && !d.IsDir() {
 			name := path[inSize:]
 			if name[len(name)-3:] == ".il" {
-				var data []byte
-				data, err = os.ReadFile(path)
+				var tmpl *template.Template
+				tmpl, err = template.ParseFrom(importDirective, path)
 				if err == nil {
-					var tmpl *template.Template
-					tmpl, err = template.ParseFrom(templatesPath, string(data))
-					if err == nil {
-						templates[name] = tmpl
-					}
+					templates[name] = tmpl
 				}
 			}
 		}
