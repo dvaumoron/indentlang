@@ -196,12 +196,15 @@ func CreateHtmlElement(name string) types.NativeAppliable {
 		local := types.NewLocalEnvironment(env)
 		attrs := types.NewList()
 		childs := types.NewList()
-		types.ForEach(args, func(value types.Object) bool {
-			value = value.Eval(local)
-			if value.HasCategory(parser.AttributeName) {
-				attrs.Add(value)
-			} else {
-				childs.Add(value)
+		types.ForEach(args, func(line types.Object) bool {
+			value := line.Eval(local)
+			_, ok := value.(types.NoneType)
+			if !ok {
+				if value.HasCategory(parser.AttributeName) {
+					attrs.Add(value)
+				} else {
+					childs.Add(value)
+				}
 			}
 			return true
 		})
