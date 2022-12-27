@@ -33,9 +33,7 @@ type Template struct {
 }
 
 func (t *Template) Execute(w io.Writer, data any) error {
-	// the LocalEnvironment layer is useful if Main is a macro
-	dataEnv := types.NewLocalEnvironment(types.NewDataEnvironment(data, t.env))
-	_, err := t.main.Apply(dataEnv, types.NewList()).WriteTo(w)
+	_, err := t.main.ApplyWithData(data, t.env, types.NewList()).WriteTo(w)
 	return err
 }
 
@@ -52,6 +50,7 @@ func ParsePath(path string) (*Template, error) {
 
 func ParseFrom(importDirective types.Appliable, filePath string) (*Template, error) {
 	env := types.NewLocalEnvironment(builtins.Builtins)
+	env.StoreStr(builtins.ImportName, importDirective)
 
 	args := types.NewList()
 	args.Add(types.NewString(filePath))

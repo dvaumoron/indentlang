@@ -28,6 +28,7 @@ type returnMarker struct{}
 
 type kindAppliable interface {
 	initEnv(types.Environment) types.Environment
+	initMergeEnv(types.Environment, types.Environment) types.Environment
 	retrieveArgs(types.Environment, types.Environment, types.Iterable)
 	defaultRetrieveArgs(types.Environment, types.Environment, types.Iterator)
 	evalReturn(types.Environment, types.Environment) types.Object
@@ -44,6 +45,10 @@ func (n *noArgsKind) initEnv(env types.Environment) types.Environment {
 	local := types.NewLocalEnvironment(env)
 	local.StoreStr(returnName, n.returnForm)
 	return local
+}
+
+func (n *noArgsKind) initMergeEnv(creationEnv, callEnv types.Environment) types.Environment {
+	return n.initEnv(types.NewMergeEnvironment(creationEnv, callEnv))
 }
 
 func (*noArgsKind) retrieveArgs(types.Environment, types.Environment, types.Iterable) {
@@ -151,6 +156,23 @@ type userAppliable struct {
 
 func (u *userAppliable) Apply(callEnv types.Environment, args types.Iterable) (res types.Object) {
 	local := u.initEnv(u.creationEnv)
+	u.retrieveArgs(callEnv, local, args)
+	defer func() {
+		if r := recover(); r != nil {
+			_, ok := r.(returnMarker)
+			if ok {
+				res = u.evalReturn(callEnv, local)
+			} else {
+				panic(r)
+			}
+		}
+	}()
+	evalBody(u.body, local)
+	return types.None
+}
+
+func (u *userAppliable) ApplyWithData(data any, callEnv types.Environment, args types.Iterable) (res types.Object) {
+	local := u.initMergeEnv(types.NewDataEnvironment(data, u.creationEnv), callEnv)
 	u.retrieveArgs(callEnv, local, args)
 	defer func() {
 		if r := recover(); r != nil {

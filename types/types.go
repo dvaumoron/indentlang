@@ -198,6 +198,10 @@ func (n NativeAppliable) Apply(env Environment, it Iterable) Object {
 	return n.inner(env, it)
 }
 
+func (n NativeAppliable) ApplyWithData(data any, env Environment, it Iterable) Object {
+	return n.inner(NewDataEnvironment(data, env), it)
+}
+
 func MakeNativeAppliable(f func(Environment, Iterable) Object) NativeAppliable {
 	return NativeAppliable{inner: f}
 }

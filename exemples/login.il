@@ -1,8 +1,8 @@
-import "main.il"
+Import "main.il"
 
-:= Js (script @type="text/javascript" @src="/static/login.js")
+:= WidgetHeader (script @type="text/javascript" @src="/static/login.js")
 
-:= Body
+:= WidgetBody
     form @action=CurrentUrl:"submit" @method="POST"
         div (label @for="Login" LoginLabel)
         div (input @type="text" @name="Login")

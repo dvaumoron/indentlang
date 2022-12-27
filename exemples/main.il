@@ -4,7 +4,7 @@ html
         title "Title - " PageTitle
         link @rel="stylesheet" @type="text/css" @href="/static/main.css"
         script @type="text/javascript" @src="/static/main.js"
-        Js
+        WidgetHeader
     body
         header
             h1 PageTitle
@@ -23,5 +23,5 @@ html
                     := url (. page Url)
                     li (a @href=url (. page Name))
         main
-            Body
+            WidgetBody
         footer
