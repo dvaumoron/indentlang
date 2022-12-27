@@ -33,7 +33,9 @@ type Template struct {
 }
 
 func (t *Template) Execute(w io.Writer, data any) error {
-	_, err := t.main.ApplyWithData(data, t.env, types.NewList()).WriteTo(w)
+	// the LocalEnvironment layer is useful if Main is a macro
+	dataEnv := types.NewLocalEnvironment(types.NewDataEnvironment(data, t.env))
+	_, err := t.main.Apply(dataEnv, types.NewList()).WriteTo(w)
 	return err
 }
 

@@ -65,6 +65,9 @@ func (r IndentlangHTMLRender) Instance(name string, data any) render.Render {
 // Use this method to init the HTMLRender in a gin Engine.
 func LoadTemplates(templatesPath string) IndentlangHTMLRender {
 	templatesPath, err := filepath.Abs(templatesPath)
+	if err != nil {
+		panic(err)
+	}
 	templatesPath = builtins.CheckPath(templatesPath)
 
 	importDirective := builtins.MakeImportDirective(templatesPath)

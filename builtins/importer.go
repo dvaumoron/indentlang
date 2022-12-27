@@ -94,19 +94,21 @@ const ImportName = "Import"
 func innerImporter(basePath, totalPath string) {
 	env := types.NewLocalEnvironment(Builtins)
 	env.StoreStr(ImportName, makeCheckedImportDirective(basePath))
+	// nested environment to isolate the directive Import, this avoid copying
+	local := types.NewLocalEnvironment(env)
 	tmplData, err := os.ReadFile(totalPath)
 	if err == nil {
 		var node types.Object
 		node, err = parser.Parse(string(tmplData))
 		if err == nil {
-			node.Eval(env)
+			node.Eval(local)
 		} else {
-			env = nil
+			local = nil
 		}
 	} else {
-		env = nil
+		local = nil
 	}
-	responseToImporter <- importResponse{path: totalPath, env: env}
+	responseToImporter <- importResponse{path: totalPath, env: local}
 }
 
 var directiveMutex sync.RWMutex

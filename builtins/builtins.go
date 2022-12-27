@@ -32,9 +32,9 @@ func initBuitins() types.BaseEnvironment {
 	base := types.MakeBaseEnvironment()
 	// special case in order to create Main,
 	// which will be called by the Execute method of the Template struct
-	base.StoreStr("html", types.MakeNativeAppliable(func(env types.Environment, args types.Iterable) types.Object {
-		env.StoreStr(MainName, types.MakeNativeAppliable(func(callEnv types.Environment, emptyArgs types.Iterable) types.Object {
-			return elementHtml.Apply(callEnv, args)
+	base.StoreStr("html", types.MakeNativeAppliable(func(creationEnv types.Environment, args types.Iterable) types.Object {
+		creationEnv.StoreStr(MainName, types.MakeNativeAppliable(func(callEnv types.Environment, emptyArgs types.Iterable) types.Object {
+			return elementHtml.Apply(types.NewMergeEnvironment(creationEnv, callEnv), args)
 		}))
 		return types.None
 	}))
