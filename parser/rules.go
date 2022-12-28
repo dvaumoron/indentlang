@@ -56,9 +56,7 @@ func handleWord(words <-chan string, listStack *stack[*types.List], done chan<- 
 
 func handleClassicWord(word string, list *types.List) {
 	if !nativeRules(word, list) {
-		args := types.NewList()
-		args.Add(types.String(word))
-		args.Add(list)
+		args := types.NewList(types.String(word), list)
 		res := true
 		types.ForEach(customRules, func(object types.Object) bool {
 			rule, ok := object.(types.Appliable)
@@ -89,11 +87,11 @@ func nativeRules(word string, list *types.List) bool {
 }
 
 func parseTrue(word string) (types.Object, bool) {
-	return types.True, word == "true"
+	return types.Boolean(true), word == "true"
 }
 
 func parseFalse(word string) (types.Object, bool) {
-	return types.False, word == "false"
+	return types.Boolean(false), word == "false"
 }
 
 func parseNone(word string) (types.Object, bool) {
@@ -143,9 +141,8 @@ func parseAttribute(word string) (types.Object, bool) {
 	ok := word[0] == '@'
 	if ok {
 		elems := strings.Split(word[1:], "=")
-		attr := types.NewList()
+		attr := types.NewList(types.String(elems[0]))
 		attr.AddCategory(AttributeName)
-		attr.Add(types.String(elems[0]))
 		if len(elems) > 1 {
 			handleClassicWord(elems[1], attr)
 		}
@@ -159,8 +156,7 @@ func parseList(word string) (types.Object, bool) {
 	var res types.Object = types.None
 	ok := word != SetName && strings.Contains(word, ":")
 	if ok {
-		nodeList := types.NewList()
-		nodeList.Add(ListId)
+		nodeList := types.NewList(ListId)
 		for _, elem := range strings.Split(word, ":") {
 			if elem == "" {
 				nodeList.Add(types.None)

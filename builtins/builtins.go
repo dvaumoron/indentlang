@@ -145,7 +145,7 @@ func initBuitins() types.BaseEnvironment {
 	addHtmlElement(base, "video")
 	addHtmlElement(base, "wbr")
 
-	// true langage features
+	// start of the "true" language features
 	// *Form indicate a special form
 	// *Func indicate a normal function
 	base.StoreStr("If", types.MakeNativeAppliable(ifForm))
@@ -155,15 +155,12 @@ func initBuitins() types.BaseEnvironment {
 	base.StoreStr(".", types.MakeNativeAppliable(getForm))
 	base.StoreStr("[]", types.MakeNativeAppliable(loadFunc))
 	base.StoreStr("[]=", types.MakeNativeAppliable(storeFunc))
+
+	// functions and macros management
 	base.StoreStr("Func", types.MakeNativeAppliable(funcForm))
 	base.StoreStr("Lambda", types.MakeNativeAppliable(lambdaForm))
 	base.StoreStr("Call", types.MakeNativeAppliable(callFunc))
 	base.StoreStr("Macro", types.MakeNativeAppliable(macroForm))
-
-	// TODO init stuff
-	// Quote, Unquote
-	// Range, Enumerate, Add, Size, Del, Iter, Next, AddAttribute, HasAttribute
-	// And, Or, Not, ==, !=, >, >=, <, <=
 
 	// basic type creation and conversion
 	base.StoreStr("Boolean", types.MakeNativeAppliable(boolConvFunc))
@@ -173,8 +170,20 @@ func initBuitins() types.BaseEnvironment {
 	base.StoreStr(parser.ListName, types.MakeNativeAppliable(listFunc))
 	base.StoreStr("Dict", types.MakeNativeAppliable(dictFunc))
 
+	// logic
+	base.StoreStr("Not", types.MakeNativeAppliable(notFunc))
+	base.StoreStr("And", types.MakeNativeAppliable(andFunc))
+	base.StoreStr("Or", types.MakeNativeAppliable(orFunc))
+	// ==, !=, >, >=, <, <=
+
 	// advanced looping
 	base.StoreStr("Range", types.MakeNativeAppliable(rangeFunc))
+	base.StoreStr("Enumerate", types.MakeNativeAppliable(enumerateFunc))
+	base.StoreStr("Iter", types.MakeNativeAppliable(iterFunc))
+	base.StoreStr("Next", types.MakeNativeAppliable(nextFunc))
+	base.StoreStr("Size", types.MakeNativeAppliable(sizeFunc))
+	base.StoreStr("Add", types.MakeNativeAppliable(addFunc))
+	base.StoreStr("AddAll", types.MakeNativeAppliable(addAllFunc))
 
 	// some function to do math
 	base.StoreStr("+", types.MakeNativeAppliable(sumFunc))
@@ -184,76 +193,10 @@ func initBuitins() types.BaseEnvironment {
 	base.StoreStr("//", types.MakeNativeAppliable(floorDivFunc))
 	base.StoreStr("%", types.MakeNativeAppliable(remainderFunc))
 
+	// TODO init stuff
+	// Quote, Unquote, Del, AddAttribute, HasAttribute
+
 	// give parser package a protected copy to use in user custom rules
 	parser.BuiltinsCopy = types.NewLocalEnvironment(base)
 	return base
-}
-
-func addHtmlElement(base types.BaseEnvironment, name string) {
-	base.StoreStr(name, CreateHtmlElement(name))
-}
-
-var openElement = types.String("<")
-var openCloseElement = types.String("</")
-var closeElement = types.String(">")
-var closeOpenElement = types.String("/>")
-var space = types.String(" ")
-var equalQuote = types.String("=\"")
-var quote = types.String("\"")
-
-func CreateHtmlElement(name string) types.NativeAppliable {
-	wrappedName := types.String(name)
-	return types.MakeNativeAppliable(func(env types.Environment, args types.Iterable) types.Object {
-		local := types.NewLocalEnvironment(env)
-		attrs := types.NewList()
-		childs := types.NewList()
-		types.ForEach(args, func(arg types.Object) bool {
-			value := arg.Eval(local)
-			_, ok := value.(types.NoneType)
-			if !ok {
-				list, ok := value.(*types.List)
-				if ok && list.HasCategory(parser.AttributeName) {
-					attrs.Add(value)
-				} else {
-					childs.Add(value)
-				}
-			}
-			return true
-		})
-		res := types.NewList()
-		res.Add(openElement)
-		res.Add(wrappedName)
-		types.ForEach(attrs, func(value types.Object) bool {
-			attr, ok := value.(types.Iterable)
-			if ok {
-				itAttr := attr.Iter()
-				attrName, ok := itAttr.Next()
-				if ok {
-					res.Add(space)
-					res.Add(attrName)
-					attrValue, ok := itAttr.Next()
-					if ok {
-						res.Add(equalQuote)
-						res.Add(attrValue)
-						res.Add(quote)
-					}
-				}
-			}
-			return true
-		})
-		if childs.SizeInt() == 0 {
-			res.Add(closeOpenElement)
-		} else {
-			res.Add(closeElement)
-			types.ForEach(childs, func(value types.Object) bool {
-				res.Add(space)
-				res.Add(value)
-				return true
-			})
-			res.Add(openCloseElement)
-			res.Add(wrappedName)
-			res.Add(closeElement)
-		}
-		return res
-	})
 }

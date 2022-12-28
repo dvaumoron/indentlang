@@ -27,7 +27,7 @@ import (
 
 func boolConvFunc(env types.Environment, args types.Iterable) types.Object {
 	arg, _ := args.Iter().Next()
-	return types.MakeBoolean(extractBoolean(arg.Eval(env)))
+	return types.Boolean(extractBoolean(arg.Eval(env)))
 }
 
 func extractBoolean(o types.Object) bool {
@@ -42,7 +42,7 @@ func extractBoolean(o types.Object) bool {
 	case types.Float:
 		res = casted != 0
 	case types.Sizable:
-		res = casted.SizeInt() != 0
+		res = casted.Size() != 0
 	}
 	return res
 }
@@ -121,11 +121,15 @@ func extractString(o types.Object) string {
 		it := casted.Iter()
 		var builder strings.Builder
 		builder.WriteRune('(')
-		types.ForEach(it, func(el types.Object) bool {
-			builder.WriteString(extractString(el))
-			builder.WriteRune(' ')
-			return true
-		})
+		first, ok := it.Next()
+		if ok {
+			builder.WriteString(extractString(first))
+			types.ForEach(it, func(el types.Object) bool {
+				builder.WriteRune(' ')
+				builder.WriteString(extractString(el))
+				return true
+			})
+		}
 		builder.WriteRune(')')
 		res = builder.String()
 	}
@@ -133,7 +137,7 @@ func extractString(o types.Object) string {
 }
 
 func listFunc(env types.Environment, args types.Iterable) types.Object {
-	return evalIterable(args, env)
+	return types.NewList().AddAll(newEvalIterator(args, env))
 }
 
 func dictFunc(env types.Environment, args types.Iterable) types.Object {

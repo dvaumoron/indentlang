@@ -66,3 +66,95 @@ func rangeFunc(env types.Environment, args types.Iterable) types.Object {
 	}
 	return &rangeIterator{current: start, end: end, step: step}
 }
+
+type enumerateIterator struct {
+	types.Iterator
+	count int64
+}
+
+func (e *enumerateIterator) Next() (types.Object, bool) {
+	value, ok := e.Iterator.Next()
+	e.count++
+	return types.NewList(types.Integer(e.count), value), ok
+}
+
+func enumerateFunc(env types.Environment, args types.Iterable) types.Object {
+	arg0, _ := args.Iter().Next()
+	it, ok := arg0.Eval(env).(types.Iterable)
+	var res types.Object = types.None
+	if ok {
+		res = &enumerateIterator{Iterator: it.Iter(), count: 1}
+	}
+	return res
+}
+
+func iterFunc(env types.Environment, args types.Iterable) types.Object {
+	arg0, _ := args.Iter().Next()
+	it, ok := arg0.Eval(env).(types.Iterable)
+	var res types.Object = types.None
+	if ok {
+		res = it.Iter()
+	}
+	return res
+}
+
+func nextFunc(env types.Environment, args types.Iterable) types.Object {
+	arg0, _ := args.Iter().Next()
+	it, ok := arg0.Eval(env).(types.Iterator)
+	var res0 types.Object = types.None
+	res1 := false
+	if ok {
+		res0, res1 = it.Next()
+	}
+	return types.NewList(res0, types.Boolean(res1))
+}
+
+func sizeFunc(env types.Environment, args types.Iterable) types.Object {
+	arg0, _ := args.Iter().Next()
+	it, ok := arg0.Eval(env).(types.Sizable)
+	var res types.Object = types.None
+	if ok {
+		res = types.Integer(it.Size())
+	}
+	return res
+}
+
+type evalIterator struct {
+	types.Iterator
+	env types.Environment
+}
+
+func (e *evalIterator) Next() (types.Object, bool) {
+	value, ok := e.Iterator.Next()
+	return value.Eval(e.env), ok
+}
+
+func newEvalIterator(it types.Iterable, env types.Environment) *evalIterator {
+	return &evalIterator{Iterator: it.Iter(), env: env}
+}
+
+func addFunc(env types.Environment, args types.Iterable) types.Object {
+	it := args.Iter()
+	arg0, _ := it.Next()
+	list, ok := arg0.Eval(env).(*types.List)
+	if ok {
+		list.AddAll(newEvalIterator(it, env))
+	}
+	return types.None
+}
+
+func addAllFunc(env types.Environment, args types.Iterable) types.Object {
+	it := args.Iter()
+	arg0, _ := it.Next()
+	list, ok := arg0.Eval(env).(*types.List)
+	if ok {
+		types.ForEach(it, func(arg types.Object) bool {
+			it2, ok := arg.Eval(env).(types.Iterable)
+			if ok {
+				list.AddAll(it2)
+			}
+			return ok
+		})
+	}
+	return types.None
+}

@@ -58,11 +58,12 @@ func ForEach(it Iterable, action func(Object) bool) {
 	}
 }
 
-func (l *List) AddAll(it Iterable) {
+func (l *List) AddAll(it Iterable) *List {
 	ForEach(it, func(value Object) bool {
 		l.Add(value)
 		return true
 	})
+	return l
 }
 
 func convertToInt(arg Object, init int) int {
@@ -125,11 +126,7 @@ func (l *List) Store(key, value Object) {
 	}
 }
 
-func (l *List) Size() Integer {
-	return Integer(len(l.inner))
-}
-
-func (l *List) SizeInt() int {
+func (l *List) Size() int {
 	return len(l.inner)
 }
 
@@ -163,23 +160,17 @@ func sendListValue(objects []Object, transmitter chan<- Object) {
 	close(transmitter)
 }
 
-func WriteTo(it Iterable, w io.Writer) (int64, error) {
+func (l *List) WriteTo(w io.Writer) (int64, error) {
 	var n, n2 int64
 	var err error
-	it2 := it.Iter()
-	for err == nil {
-		value, ok := it2.Next()
-		if !ok {
-			break
-		}
+	for _, value := range l.inner {
 		n2, err = value.WriteTo(w)
 		n += n2
+		if err != nil {
+			break
+		}
 	}
 	return n, err
-}
-
-func (l *List) WriteTo(w io.Writer) (int64, error) {
-	return WriteTo(l, w)
 }
 
 func (l *List) Eval(env Environment) Object {
@@ -201,6 +192,6 @@ func (l *List) Eval(env Environment) Object {
 	return res
 }
 
-func NewList() *List {
-	return &List{categories: map[string]NoneType{}}
+func NewList(objects ...Object) *List {
+	return &List{categories: map[string]NoneType{}, inner: objects}
 }

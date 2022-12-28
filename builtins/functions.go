@@ -36,8 +36,7 @@ type kindAppliable interface {
 
 type noArgsKind struct {
 	returnForm types.NativeAppliable
-	evalArgs   func(types.Iterable, types.Environment) types.Iterable
-	evalIdArgs func(types.Environment, types.Environment, []string, types.Iterator)
+	evalArgs   func(types.Iterable, types.Environment) types.Iterator
 	evalObject func(types.Object, types.Environment) types.Object
 }
 
@@ -65,8 +64,8 @@ func (n *noArgsKind) evalReturn(env types.Environment, local types.Environment) 
 var functionKind = &noArgsKind{
 	returnForm: types.MakeNativeAppliable(func(env types.Environment, args types.Iterable) types.Object {
 		var res types.Object
-		evaluated := evalIterable(args, env)
-		switch size := evaluated.SizeInt(); size {
+		evaluated := types.NewList().AddAll(newEvalIterator(args, env))
+		switch size := evaluated.Size(); size {
 		case 0:
 			res = types.None
 		case 1:
@@ -77,14 +76,8 @@ var functionKind = &noArgsKind{
 		env.StoreStr(hiddenReturnName, res)
 		panic(returnMarker{})
 	}),
-	evalArgs: func(args types.Iterable, env types.Environment) types.Iterable {
-		return evalIterable(args, env)
-	},
-	evalIdArgs: func(env types.Environment, local types.Environment, ids []string, it types.Iterator) {
-		for _, id := range ids {
-			value, _ := it.Next()
-			local.StoreStr(id, value.Eval(env))
-		}
+	evalArgs: func(args types.Iterable, env types.Environment) types.Iterator {
+		return newEvalIterator(args, env)
 	},
 	evalObject: func(res types.Object, env types.Environment) types.Object {
 		return res
@@ -96,10 +89,9 @@ var macroKind = &noArgsKind{
 		env.StoreStr(hiddenReturnName, arg0.Eval(env))
 		panic(returnMarker{})
 	}),
-	evalArgs: func(args types.Iterable, env types.Environment) types.Iterable {
-		return args
+	evalArgs: func(args types.Iterable, env types.Environment) types.Iterator {
+		return args.Iter()
 	},
-	evalIdArgs: defaultRetrieveArgs,
 	evalObject: func(res types.Object, env types.Environment) types.Object {
 		return res.Eval(env)
 	},
@@ -111,15 +103,14 @@ type classicKind struct {
 }
 
 func (c *classicKind) retrieveArgs(env types.Environment, local types.Environment, args types.Iterable) {
-	c.evalIdArgs(env, local, c.ids, args.Iter())
-
+	storeArgsInIds(env, local, c.ids, c.evalArgs(args, env).Iter())
 }
 
 func (c *classicKind) defaultRetrieveArgs(env types.Environment, local types.Environment, it types.Iterator) {
-	defaultRetrieveArgs(env, local, c.ids, it)
+	storeArgsInIds(env, local, c.ids, it)
 }
 
-func defaultRetrieveArgs(env types.Environment, local types.Environment, ids []string, it types.Iterator) {
+func storeArgsInIds(env types.Environment, local types.Environment, ids []string, it types.Iterator) {
 	for _, id := range ids {
 		value, _ := it.Next()
 		local.StoreStr(id, value)
@@ -218,7 +209,7 @@ func newUserAppliable(env types.Environment, declared types.Object, body *types.
 	case types.Identifer:
 		kind = newVarArgsKind(baseKind, string(casted.String))
 	case *types.List:
-		if casted.SizeInt() != 0 {
+		if casted.Size() != 0 {
 			kind = newClassicKind(baseKind, extractIds(casted))
 		}
 	}
@@ -239,9 +230,8 @@ func appliableForm(env types.Environment, args types.Iterable, kind *noArgsKind)
 	name, ok := arg0.(types.Identifer)
 	if ok {
 		declared, _ := it.Next()
-		body := types.NewList()
-		body.AddAll(it)
-		if body.SizeInt() != 0 {
+		body := types.NewList().AddAll(it)
+		if body.Size() != 0 {
 			env.StoreStr(string(name.String), newUserAppliable(env, declared, body, kind))
 		}
 	}
@@ -251,10 +241,9 @@ func appliableForm(env types.Environment, args types.Iterable, kind *noArgsKind)
 func lambdaForm(env types.Environment, args types.Iterable) types.Object {
 	it := args.Iter()
 	declared, _ := it.Next()
-	body := types.NewList()
-	body.AddAll(it)
+	body := types.NewList().AddAll(it)
 	var res types.Object = types.None
-	if body.SizeInt() != 0 {
+	if body.Size() != 0 {
 		res = newUserAppliable(env, declared, body, functionKind)
 	}
 	return res

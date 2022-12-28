@@ -41,8 +41,7 @@ func forForm(env types.Environment, args types.Iterable) types.Object {
 	arg1, _ := it.Next()
 	it2, ok := arg1.Eval(env).(types.Iterable)
 	if ok {
-		bloc := types.NewList()
-		bloc.AddAll(it)
+		bloc := types.NewList().AddAll(it)
 		switch casted := arg0.(type) {
 		case types.Identifer:
 			id := string(casted.String)
@@ -52,7 +51,7 @@ func forForm(env types.Environment, args types.Iterable) types.Object {
 				return true
 			})
 		case *types.List:
-			if casted.SizeInt() != 0 {
+			if casted.Size() != 0 {
 				ids := extractIds(casted)
 				types.ForEach(it2, func(value types.Object) bool {
 					it3, ok := value.(types.Iterable)
@@ -73,7 +72,7 @@ func forForm(env types.Environment, args types.Iterable) types.Object {
 }
 
 func extractIds(l *types.List) []string {
-	ids := make([]string, 0, l.SizeInt())
+	ids := make([]string, 0, l.Size())
 	types.ForEach(l, func(value types.Object) bool {
 		id, ok := value.(types.Identifer)
 		if ok {
@@ -88,9 +87,8 @@ func whileForm(env types.Environment, args types.Iterable) types.Object {
 	res := types.NewList()
 	it := args.Iter()
 	arg0, _ := it.Next()
-	bloc := types.NewList()
-	bloc.AddAll(it)
-	if bloc.SizeInt() != 0 {
+	bloc := types.NewList().AddAll(it)
+	if bloc.Size() != 0 {
 		for {
 			if !extractBoolean(arg0.Eval(env)) {
 				break
@@ -178,8 +176,8 @@ func loadFunc(env types.Environment, args types.Iterable) types.Object {
 }
 
 func storeFunc(env types.Environment, args types.Iterable) types.Object {
-	evaluated := evalIterable(args, env)
-	if size := evaluated.SizeInt() - 2; size > 0 {
+	evaluated := types.NewList().AddAll(newEvalIterator(args, env))
+	if size := evaluated.Size() - 2; size > 0 {
 		it := evaluated.Iter()
 		arg, _ := it.Next()
 		ok := true
@@ -203,13 +201,4 @@ func storeFunc(env types.Environment, args types.Iterable) types.Object {
 		}
 	}
 	return types.None
-}
-
-func evalIterable(args types.Iterable, env types.Environment) *types.List {
-	evaluated := types.NewList()
-	types.ForEach(args, func(arg types.Object) bool {
-		evaluated.Add(arg.Eval(env))
-		return true
-	})
-	return evaluated
 }

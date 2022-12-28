@@ -79,7 +79,7 @@ func LoadTemplates(templatesPath string) IndentlangHTMLRender {
 			name := path[inSize:]
 			if name[len(name)-3:] == ".il" {
 				var tmpl *template.Template
-				tmpl, err = template.ParseFrom(importDirective, path)
+				tmpl, err = template.ParseWithImport(importDirective, path)
 				if err == nil {
 					templates[name] = tmpl
 				}

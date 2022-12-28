@@ -46,14 +46,8 @@ type Object interface {
 	Eval(Environment) Object
 }
 
-type Addable interface {
-	Add(Object)
-	AddAll(Iterable)
-}
-
 type Sizable interface {
-	Size() *Integer
-	SizeInt() int
+	Size() int
 }
 
 type Iterator interface {

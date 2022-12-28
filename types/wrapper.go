@@ -87,11 +87,7 @@ func valueToObject(value reflect.Value) Object {
 	if !isNil {
 		switch value.Kind() {
 		case reflect.Bool:
-			if value.Bool() {
-				res = True
-			} else {
-				res = False
-			}
+			res = Boolean(value.Bool())
 		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 			res = Integer(value.Int())
 		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:

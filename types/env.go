@@ -73,11 +73,7 @@ func (b BaseEnvironment) CopyTo(other Environment) {
 	}
 }
 
-func (b BaseEnvironment) Size() Integer {
-	return Integer(len(b.objects))
-}
-
-func (b BaseEnvironment) SizeInt() int {
+func (b BaseEnvironment) Size() int {
 	return len(b.objects)
 }
 
@@ -89,10 +85,7 @@ func (b BaseEnvironment) Iter() Iterator {
 
 func sendMapValue(objects map[string]Object, transmitter chan<- Object) {
 	for key, value := range objects {
-		pair := NewList()
-		pair.Add(String(key))
-		pair.Add(value)
-		transmitter <- pair
+		transmitter <- NewList(String(key), value)
 	}
 	close(transmitter)
 }

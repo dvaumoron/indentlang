@@ -51,13 +51,6 @@ func (b Boolean) Eval(env Environment) Object {
 	return b
 }
 
-func MakeBoolean(b bool) Boolean {
-	return Boolean(b)
-}
-
-var True = Boolean(true)
-var False = Boolean(false)
-
 type Integer int64
 
 func (i Integer) WriteTo(w io.Writer) (int64, error) {
@@ -116,10 +109,7 @@ func (s String) Load(key Object) Object {
 	return res
 }
 
-func (s String) Size() Integer {
-	return Integer(len(s))
-}
-func (s String) SizeInt() int {
+func (s String) Size() int {
 	return len(s)
 }
 

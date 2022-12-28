@@ -56,8 +56,7 @@ func Parse(str string) (*types.List, error) {
 	indentStack := newStack[int]()
 	indentStack.push(0)
 	listStack := newStack[*types.List]()
-	res := types.NewList()
-	res.Add(ListId)
+	res := types.NewList(ListId)
 	listStack.push(res)
 	manageOpen(listStack)
 	var err error
