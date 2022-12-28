@@ -128,17 +128,17 @@ func MakeIdentifier(s string) Identifer {
 
 type NativeAppliable struct {
 	NoneType
-	inner func(Environment, Iterable) Object
+	inner func(Environment, Iterator) Object
 }
 
 func (n NativeAppliable) Apply(env Environment, it Iterable) Object {
-	return n.inner(env, it)
+	return n.inner(env, it.Iter())
 }
 
 func (n NativeAppliable) ApplyWithData(data any, env Environment, it Iterable) Object {
-	return n.inner(NewDataEnvironment(data, env), it)
+	return n.inner(NewDataEnvironment(data, env), it.Iter())
 }
 
-func MakeNativeAppliable(f func(Environment, Iterable) Object) NativeAppliable {
+func MakeNativeAppliable(f func(Environment, Iterator) Object) NativeAppliable {
 	return NativeAppliable{inner: f}
 }

@@ -19,23 +19,23 @@ package builtins
 
 import "github.com/dvaumoron/indentlang/types"
 
-func notFunc(env types.Environment, args types.Iterable) types.Object {
-	arg, _ := args.Iter().Next()
+func notFunc(env types.Environment, itArgs types.Iterator) types.Object {
+	arg, _ := itArgs.Next()
 	return types.Boolean(!extractBoolean(arg.Eval(env)))
 }
 
-func andFunc(env types.Environment, args types.Iterable) types.Object {
+func andFunc(env types.Environment, itArgs types.Iterator) types.Object {
 	res := true
-	types.ForEach(args, func(arg types.Object) bool {
+	types.ForEach(itArgs, func(arg types.Object) bool {
 		res = extractBoolean(arg.Eval(env))
 		return res
 	})
 	return types.Boolean(res)
 }
 
-func orFunc(env types.Environment, args types.Iterable) types.Object {
+func orFunc(env types.Environment, itArgs types.Iterator) types.Object {
 	res := false
-	types.ForEach(args, func(arg types.Object) bool {
+	types.ForEach(itArgs, func(arg types.Object) bool {
 		res = extractBoolean(arg.Eval(env))
 		return !res
 	})

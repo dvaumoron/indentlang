@@ -45,22 +45,22 @@ var productCarac = &cumulCarac{
 	init: 1, cumulInt: multNumber[int64], cumulFloat: multNumber[float64],
 }
 
-func sumFunc(env types.Environment, args types.Iterable) types.Object {
-	return cumulFunc(env, args, sumCarac)
+func sumFunc(env types.Environment, itArgs types.Iterator) types.Object {
+	return cumulFunc(env, itArgs, sumCarac)
 }
 
-func productFunc(env types.Environment, args types.Iterable) types.Object {
-	return cumulFunc(env, args, productCarac)
+func productFunc(env types.Environment, itArgs types.Iterator) types.Object {
+	return cumulFunc(env, itArgs, productCarac)
 }
 
-func cumulFunc(env types.Environment, args types.Iterable, carac *cumulCarac) types.Object {
+func cumulFunc(env types.Environment, itArgs types.Iterator, carac *cumulCarac) types.Object {
 	cumul := carac.init
 	cumulF := float64(cumul)
 	cumulInt := carac.cumulInt
 	cumulFloat := carac.cumulFloat
 	condition := true
 	hasFloat := false
-	types.ForEach(args, func(arg types.Object) bool {
+	types.ForEach(itArgs, func(arg types.Object) bool {
 		switch casted := arg.Eval(env).(type) {
 		case types.Integer:
 			cumul = cumulInt(cumul, int64(casted))
@@ -85,10 +85,9 @@ func cumulFunc(env types.Environment, args types.Iterable, carac *cumulCarac) ty
 	return res
 }
 
-func minusFunc(env types.Environment, args types.Iterable) types.Object {
-	it := args.Iter()
-	arg0, _ := it.Next()
-	arg1, _ := it.Next()
+func minusFunc(env types.Environment, itArgs types.Iterator) types.Object {
+	arg0, _ := itArgs.Next()
+	arg1, _ := itArgs.Next()
 	var res types.Object = types.None
 	switch casted := arg0.Eval(env).(type) {
 	case types.Integer:
@@ -109,10 +108,9 @@ func minusFunc(env types.Environment, args types.Iterable) types.Object {
 	return res
 }
 
-func divFunc(env types.Environment, args types.Iterable) types.Object {
-	it := args.Iter()
-	arg0, _ := it.Next()
-	arg1, _ := it.Next()
+func divFunc(env types.Environment, itArgs types.Iterator) types.Object {
+	arg0, _ := itArgs.Next()
+	arg1, _ := itArgs.Next()
 	var res types.Object
 	switch casted := arg0.Eval(env).(type) {
 	case types.Integer:
@@ -156,18 +154,17 @@ func remainderOp(a, b int64) int64 {
 	return a % b
 }
 
-func floorDivFunc(env types.Environment, args types.Iterable) types.Object {
-	return intOpFunc(env, args, floorDivOp)
+func floorDivFunc(env types.Environment, itArgs types.Iterator) types.Object {
+	return intOpFunc(env, itArgs, floorDivOp)
 }
 
-func remainderFunc(env types.Environment, args types.Iterable) types.Object {
-	return intOpFunc(env, args, remainderOp)
+func remainderFunc(env types.Environment, itArgs types.Iterator) types.Object {
+	return intOpFunc(env, itArgs, remainderOp)
 }
 
-func intOpFunc(env types.Environment, args types.Iterable, intOp func(int64, int64) int64) types.Object {
-	it := args.Iter()
-	arg0, _ := it.Next()
-	arg1, _ := it.Next()
+func intOpFunc(env types.Environment, itArgs types.Iterator, intOp func(int64, int64) int64) types.Object {
+	arg0, _ := itArgs.Next()
+	arg1, _ := itArgs.Next()
 	var res types.Object = types.None
 	a, ok := arg0.Eval(env).(types.Integer)
 	if ok {

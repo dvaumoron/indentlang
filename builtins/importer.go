@@ -127,8 +127,8 @@ func makeCheckedImportDirective(basePath string) types.NativeAppliable {
 		directiveMutex.Lock()
 		res, ok = directiveCache[basePath]
 		if !ok {
-			res = types.MakeNativeAppliable(func(env types.Environment, args types.Iterable) types.Object {
-				arg0, _ := args.Iter().Next()
+			res = types.MakeNativeAppliable(func(env types.Environment, itArgs types.Iterator) types.Object {
+				arg0, _ := itArgs.Next()
 				filePath, ok := arg0.(types.String)
 				if ok {
 					response := make(chan types.Environment)

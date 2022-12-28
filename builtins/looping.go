@@ -40,21 +40,20 @@ func (r *rangeIterator) Next() (types.Object, bool) {
 	return res, ok
 }
 
-func rangeFunc(env types.Environment, args types.Iterable) types.Object {
+func rangeFunc(env types.Environment, itArgs types.Iterator) types.Object {
 	var start int64
 	var end int64
 	step := int64(1)
-	it := args.Iter()
-	arg0, _ := it.Next()
+	arg0, _ := itArgs.Next()
 	i0, ok := arg0.Eval(env).(types.Integer)
 	if ok {
-		arg1, _ := it.Next()
+		arg1, _ := itArgs.Next()
 		var i1 types.Integer
 		i1, ok = arg1.Eval(env).(types.Integer)
 		if ok {
 			start = int64(i0)
 			end = int64(i1)
-			arg2, _ := it.Next()
+			arg2, _ := itArgs.Next()
 			var i2 types.Integer
 			i2, ok = arg2.Eval(env).(types.Integer)
 			if ok {
@@ -78,8 +77,8 @@ func (e *enumerateIterator) Next() (types.Object, bool) {
 	return types.NewList(types.Integer(e.count), value), ok
 }
 
-func enumerateFunc(env types.Environment, args types.Iterable) types.Object {
-	arg0, _ := args.Iter().Next()
+func enumerateFunc(env types.Environment, itArgs types.Iterator) types.Object {
+	arg0, _ := itArgs.Next()
 	it, ok := arg0.Eval(env).(types.Iterable)
 	var res types.Object = types.None
 	if ok {
@@ -88,8 +87,8 @@ func enumerateFunc(env types.Environment, args types.Iterable) types.Object {
 	return res
 }
 
-func iterFunc(env types.Environment, args types.Iterable) types.Object {
-	arg0, _ := args.Iter().Next()
+func iterFunc(env types.Environment, itArgs types.Iterator) types.Object {
+	arg0, _ := itArgs.Next()
 	it, ok := arg0.Eval(env).(types.Iterable)
 	var res types.Object = types.None
 	if ok {
@@ -98,8 +97,8 @@ func iterFunc(env types.Environment, args types.Iterable) types.Object {
 	return res
 }
 
-func nextFunc(env types.Environment, args types.Iterable) types.Object {
-	arg0, _ := args.Iter().Next()
+func nextFunc(env types.Environment, itArgs types.Iterator) types.Object {
+	arg0, _ := itArgs.Next()
 	it, ok := arg0.Eval(env).(types.Iterator)
 	var res0 types.Object = types.None
 	res1 := false
@@ -109,8 +108,8 @@ func nextFunc(env types.Environment, args types.Iterable) types.Object {
 	return types.NewList(res0, types.Boolean(res1))
 }
 
-func sizeFunc(env types.Environment, args types.Iterable) types.Object {
-	arg0, _ := args.Iter().Next()
+func sizeFunc(env types.Environment, itArgs types.Iterator) types.Object {
+	arg0, _ := itArgs.Next()
 	it, ok := arg0.Eval(env).(types.Sizable)
 	var res types.Object = types.None
 	if ok {
@@ -129,26 +128,24 @@ func (e *evalIterator) Next() (types.Object, bool) {
 	return value.Eval(e.env), ok
 }
 
-func newEvalIterator(it types.Iterable, env types.Environment) *evalIterator {
-	return &evalIterator{Iterator: it.Iter(), env: env}
+func newEvalIterator(it types.Iterator, env types.Environment) *evalIterator {
+	return &evalIterator{Iterator: it, env: env}
 }
 
-func addFunc(env types.Environment, args types.Iterable) types.Object {
-	it := args.Iter()
-	arg0, _ := it.Next()
+func addFunc(env types.Environment, itArgs types.Iterator) types.Object {
+	arg0, _ := itArgs.Next()
 	list, ok := arg0.Eval(env).(*types.List)
 	if ok {
-		list.AddAll(newEvalIterator(it, env))
+		list.AddAll(newEvalIterator(itArgs, env))
 	}
 	return types.None
 }
 
-func addAllFunc(env types.Environment, args types.Iterable) types.Object {
-	it := args.Iter()
-	arg0, _ := it.Next()
+func addAllFunc(env types.Environment, itArgs types.Iterator) types.Object {
+	arg0, _ := itArgs.Next()
 	list, ok := arg0.Eval(env).(*types.List)
 	if ok {
-		types.ForEach(it, func(arg types.Object) bool {
+		types.ForEach(itArgs, func(arg types.Object) bool {
 			it2, ok := arg.Eval(env).(types.Iterable)
 			if ok {
 				list.AddAll(it2)

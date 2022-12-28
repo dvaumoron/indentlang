@@ -36,11 +36,11 @@ func addHtmlElement(base types.BaseEnvironment, name string) {
 
 func CreateHtmlElement(name string) types.NativeAppliable {
 	wrappedName := types.String(name)
-	return types.MakeNativeAppliable(func(env types.Environment, args types.Iterable) types.Object {
+	return types.MakeNativeAppliable(func(env types.Environment, itArgs types.Iterator) types.Object {
 		local := types.NewLocalEnvironment(env)
 		attrs := types.NewList()
 		childs := types.NewList()
-		types.ForEach(args, func(arg types.Object) bool {
+		types.ForEach(itArgs, func(arg types.Object) bool {
 			value := arg.Eval(local)
 			switch casted := value.(type) {
 			case types.NoneType:

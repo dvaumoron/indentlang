@@ -25,8 +25,8 @@ import (
 	"github.com/dvaumoron/indentlang/types"
 )
 
-func boolConvFunc(env types.Environment, args types.Iterable) types.Object {
-	arg, _ := args.Iter().Next()
+func boolConvFunc(env types.Environment, itArgs types.Iterator) types.Object {
+	arg, _ := itArgs.Next()
 	return types.Boolean(extractBoolean(arg.Eval(env)))
 }
 
@@ -47,8 +47,8 @@ func extractBoolean(o types.Object) bool {
 	return res
 }
 
-func intConvFunc(env types.Environment, args types.Iterable) types.Object {
-	arg, _ := args.Iter().Next()
+func intConvFunc(env types.Environment, itArgs types.Iterator) types.Object {
+	arg, _ := itArgs.Next()
 	return types.Integer(extractInteger(arg.Eval(env)))
 }
 
@@ -72,8 +72,8 @@ func extractInteger(o types.Object) int64 {
 	return res
 }
 
-func floatConvFunc(env types.Environment, args types.Iterable) types.Object {
-	arg, _ := args.Iter().Next()
+func floatConvFunc(env types.Environment, itArgs types.Iterator) types.Object {
+	arg, _ := itArgs.Next()
 	return types.Float(extractFloat(arg.Eval(env)))
 }
 
@@ -97,8 +97,8 @@ func extractFloat(o types.Object) float64 {
 	return res
 }
 
-func stringConvFunc(env types.Environment, args types.Iterable) types.Object {
-	arg, _ := args.Iter().Next()
+func stringConvFunc(env types.Environment, itArgs types.Iterator) types.Object {
+	arg, _ := itArgs.Next()
 	return types.String(extractString(arg.Eval(env)))
 }
 
@@ -136,13 +136,13 @@ func extractString(o types.Object) string {
 	return res
 }
 
-func listFunc(env types.Environment, args types.Iterable) types.Object {
-	return types.NewList().AddAll(newEvalIterator(args, env))
+func listFunc(env types.Environment, itArgs types.Iterator) types.Object {
+	return types.NewList().AddAll(newEvalIterator(itArgs, env))
 }
 
-func dictFunc(env types.Environment, args types.Iterable) types.Object {
+func dictFunc(env types.Environment, itArgs types.Iterator) types.Object {
 	res := types.MakeBaseEnvironment()
-	types.ForEach(args, func(arg types.Object) bool {
+	types.ForEach(itArgs, func(arg types.Object) bool {
 		it, ok := arg.Eval(env).(types.Iterable)
 		if ok {
 			it2 := it.Iter()
