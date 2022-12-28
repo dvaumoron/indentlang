@@ -70,7 +70,7 @@ var functionKind = &noArgsKind{
 		case 0:
 			res = types.None
 		case 1:
-			res = evaluated.Load(types.NewInteger(0))
+			res = evaluated.Load(types.Integer(0))
 		default:
 			res = evaluated
 		}
@@ -215,8 +215,8 @@ func evalBody(body *types.List, local types.Environment) {
 func newUserAppliable(env types.Environment, declared types.Object, body *types.List, baseKind *noArgsKind) *userAppliable {
 	var kind kindAppliable = baseKind
 	switch casted := declared.(type) {
-	case *types.Identifer:
-		kind = newVarArgsKind(baseKind, casted.Inner)
+	case types.Identifer:
+		kind = newVarArgsKind(baseKind, string(casted.String))
 	case *types.List:
 		if casted.SizeInt() != 0 {
 			kind = newClassicKind(baseKind, extractIds(casted))
@@ -236,13 +236,13 @@ func macroForm(env types.Environment, args types.Iterable) types.Object {
 func appliableForm(env types.Environment, args types.Iterable, kind *noArgsKind) types.Object {
 	it := args.Iter()
 	arg0, _ := it.Next()
-	name, ok := arg0.(*types.Identifer)
+	name, ok := arg0.(types.Identifer)
 	if ok {
 		declared, _ := it.Next()
 		body := types.NewList()
 		body.AddAll(it)
 		if body.SizeInt() != 0 {
-			env.StoreStr(name.Inner, newUserAppliable(env, declared, body, kind))
+			env.StoreStr(string(name.String), newUserAppliable(env, declared, body, kind))
 		}
 	}
 	return types.None

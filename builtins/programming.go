@@ -22,16 +22,14 @@ import "github.com/dvaumoron/indentlang/types"
 func ifForm(env types.Environment, args types.Iterable) types.Object {
 	it := args.Iter()
 	arg0, _ := it.Next()
-	var res types.Object = types.None
-	test, ok := arg0.Eval(env).(types.Boolean)
-	if ok {
-		arg1, _ := it.Next()
-		if test.Inner {
-			res = arg1.Eval(env)
-		} else {
-			arg2, _ := it.Next()
-			res = arg2.Eval(env)
-		}
+	arg1, _ := it.Next()
+	test := extractBoolean(arg0.Eval(env))
+	var res types.Object
+	if test {
+		res = arg1.Eval(env)
+	} else {
+		arg2, _ := it.Next()
+		res = arg2.Eval(env)
 	}
 	return res
 }
@@ -46,8 +44,8 @@ func forForm(env types.Environment, args types.Iterable) types.Object {
 		bloc := types.NewList()
 		bloc.AddAll(it)
 		switch casted := arg0.(type) {
-		case *types.Identifer:
-			id := casted.Inner
+		case types.Identifer:
+			id := string(casted.String)
 			types.ForEach(it2, func(value types.Object) bool {
 				env.StoreStr(id, value)
 				evalBloc(bloc, res, env)
@@ -77,9 +75,9 @@ func forForm(env types.Environment, args types.Iterable) types.Object {
 func extractIds(l *types.List) []string {
 	ids := make([]string, 0, l.SizeInt())
 	types.ForEach(l, func(value types.Object) bool {
-		id, ok := value.(*types.Identifer)
+		id, ok := value.(types.Identifer)
 		if ok {
-			ids = append(ids, id.Inner)
+			ids = append(ids, string(id.String))
 		}
 		return ok
 	})
@@ -94,8 +92,7 @@ func whileForm(env types.Environment, args types.Iterable) types.Object {
 	bloc.AddAll(it)
 	if bloc.SizeInt() != 0 {
 		for {
-			condition, ok := arg0.Eval(env).(types.Boolean)
-			if !ok || !condition.Inner {
+			if !extractBoolean(arg0.Eval(env)) {
 				break
 			}
 			evalBloc(bloc, res, env)
@@ -121,17 +118,17 @@ func setForm(env types.Environment, args types.Iterable) types.Object {
 	arg1, ok := it.Next()
 	if ok {
 		switch casted := arg0.(type) {
-		case *types.Identifer:
-			env.StoreStr(casted.Inner, arg1.Eval(env))
+		case types.Identifer:
+			env.StoreStr(string(casted.String), arg1.Eval(env))
 		case *types.List:
 			it2, ok := arg1.Eval(env).(types.Iterable)
 			if ok {
 				it3 := it2.Iter()
 				types.ForEach(casted, func(value types.Object) bool {
-					id, ok := value.(*types.Identifer)
+					id, ok := value.(types.Identifer)
 					if ok {
 						value, _ := it3.Next()
-						env.StoreStr(id.Inner, value)
+						env.StoreStr(string(id.String), value)
 					}
 					return ok
 				})
@@ -150,10 +147,10 @@ func getForm(env types.Environment, args types.Iterable) types.Object {
 			current, ok := res.(types.StringLoadable)
 			res = types.None
 			if ok {
-				var id *types.Identifer
-				id, ok = value.(*types.Identifer)
+				var id types.Identifer
+				id, ok = value.(types.Identifer)
 				if ok {
-					res, ok = current.LoadStr(id.Inner)
+					res, ok = current.LoadStr(string(id.String))
 				}
 			}
 			return ok
@@ -210,8 +207,8 @@ func storeFunc(env types.Environment, args types.Iterable) types.Object {
 
 func evalIterable(args types.Iterable, env types.Environment) *types.List {
 	evaluated := types.NewList()
-	types.ForEach(args, func(value types.Object) bool {
-		evaluated.Add(value.Eval(env))
+	types.ForEach(args, func(arg types.Object) bool {
+		evaluated.Add(arg.Eval(env))
 		return true
 	})
 	return evaluated

@@ -24,13 +24,6 @@ import (
 
 type NoneType struct{}
 
-func (n NoneType) AddCategory(category string) {
-}
-
-func (n NoneType) HasCategory(category string) bool {
-	return false
-}
-
 func (n NoneType) WriteTo(w io.Writer) (int64, error) {
 	return 0, nil
 }
@@ -41,39 +34,11 @@ func (n NoneType) Eval(env Environment) Object {
 
 var None = NoneType{}
 
-type categories struct {
-	categorySet map[string]NoneType
-}
-
-func (c categories) AddCategory(category string) {
-	c.categorySet[category] = None
-}
-
-func (c categories) HasCategory(category string) bool {
-	_, ok := c.categorySet[category]
-	return ok
-}
-
-func (c categories) Copy() categories {
-	categorySet := map[string]NoneType{}
-	for category := range c.categorySet {
-		categorySet[category] = None
-	}
-	return categories{categorySet: categorySet}
-}
-
-func makeCategories() categories {
-	return categories{categorySet: map[string]NoneType{}}
-}
-
-type Boolean struct {
-	NoneType
-	Inner bool
-}
+type Boolean bool
 
 func (b Boolean) WriteTo(w io.Writer) (int64, error) {
 	var str string
-	if b.Inner {
+	if b {
 		str = "true"
 	} else {
 		str = "false"
@@ -87,106 +52,88 @@ func (b Boolean) Eval(env Environment) Object {
 }
 
 func MakeBoolean(b bool) Boolean {
-	return Boolean{Inner: b}
+	return Boolean(b)
 }
 
-var True = Boolean{Inner: true}
-var False = Boolean{Inner: false}
+var True = Boolean(true)
+var False = Boolean(false)
 
-type Integer struct {
-	categories
-	Inner int64
-}
+type Integer int64
 
-func (i *Integer) WriteTo(w io.Writer) (int64, error) {
-	n, err := io.WriteString(w, fmt.Sprint(i.Inner))
+func (i Integer) WriteTo(w io.Writer) (int64, error) {
+	n, err := io.WriteString(w, fmt.Sprint(int64(i)))
 	return int64(n), err
 }
 
-func (i *Integer) Eval(env Environment) Object {
+func (i Integer) Eval(env Environment) Object {
 	return i
 }
 
-func NewInteger(i int64) *Integer {
-	return &Integer{categories: makeCategories(), Inner: i}
-}
+type Float float64
 
-type Float struct {
-	categories
-	Inner float64
-}
-
-func (f *Float) WriteTo(w io.Writer) (int64, error) {
-	n, err := io.WriteString(w, fmt.Sprint(f.Inner))
+func (f Float) WriteTo(w io.Writer) (int64, error) {
+	n, err := io.WriteString(w, fmt.Sprint(float64(f)))
 	return int64(n), err
 }
 
-func (f *Float) Eval(env Environment) Object {
+func (f Float) Eval(env Environment) Object {
 	return f
 }
 
-func NewFloat(f float64) *Float {
-	return &Float{categories: makeCategories(), Inner: f}
-}
+type String string
 
-type String struct {
-	categories
-	Inner string
-}
-
-func (s *String) WriteTo(w io.Writer) (int64, error) {
-	n, err := io.WriteString(w, s.Inner)
+func (s String) WriteTo(w io.Writer) (int64, error) {
+	n, err := io.WriteString(w, string(s))
 	return int64(n), err
 }
 
-func (s *String) Eval(env Environment) Object {
+func (s String) Eval(env Environment) Object {
 	return s
 }
 
-func (s *String) LoadInt(index int) Object {
+func (s String) LoadInt(index int) Object {
 	var res Object = None
-	if 0 <= index && index < len(s.Inner) {
-		res = &String{categories: s.categories.Copy(), Inner: s.Inner[index : index+1]}
+	if 0 <= index && index < len(s) {
+		res = s[index : index+1]
 	}
 	return res
 }
 
-func (s *String) Load(key Object) Object {
+func (s String) Load(key Object) Object {
 	var res Object = None
 	switch casted := key.(type) {
-	case *Integer:
-		res = s.LoadInt(int(casted.Inner))
-	case *Float:
-		res = s.LoadInt(int(casted.Inner))
+	case Integer:
+		res = s.LoadInt(int(casted))
+	case Float:
+		res = s.LoadInt(int(casted))
 	case *List:
-		max := len(s.Inner)
+		max := len(s)
 		start, end := extractIndex(casted.inner, max)
 		if 0 <= start && start <= end && end <= max {
-			res = &String{categories: s.categories.Copy(), Inner: s.Inner[start:end]}
+			res = s[start:end]
 		}
 	}
 	return res
 }
 
-func (s *String) Size() *Integer {
-	return NewInteger(int64(len(s.Inner)))
+func (s String) Size() Integer {
+	return Integer(len(s))
 }
-
-func NewString(s string) *String {
-	return &String{categories: makeCategories(), Inner: s}
+func (s String) SizeInt() int {
+	return len(s)
 }
 
 type Identifer struct {
 	String
 }
 
-func (i *Identifer) Eval(env Environment) Object {
-	value, _ := env.LoadStr(i.Inner)
+func (i Identifer) Eval(env Environment) Object {
+	value, _ := env.LoadStr(string(i.String))
 	return value
 }
 
-func NewIdentifier(s string) *Identifer {
-	return &Identifer{String: *NewString(s)}
+func MakeIdentifier(s string) Identifer {
+	return Identifer{String: String(s)}
 }
 
 type NativeAppliable struct {

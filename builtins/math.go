@@ -62,11 +62,11 @@ func cumulFunc(env types.Environment, args types.Iterable, carac *cumulCarac) ty
 	hasFloat := false
 	types.ForEach(args, func(arg types.Object) bool {
 		switch casted := arg.Eval(env).(type) {
-		case *types.Integer:
-			cumul = cumulInt(cumul, casted.Inner)
-		case *types.Float:
+		case types.Integer:
+			cumul = cumulInt(cumul, int64(casted))
+		case types.Float:
 			hasFloat = true
-			cumulF = cumulFloat(cumulF, casted.Inner)
+			cumulF = cumulFloat(cumulF, float64(casted))
 		default:
 			condition = false
 		}
@@ -75,9 +75,9 @@ func cumulFunc(env types.Environment, args types.Iterable, carac *cumulCarac) ty
 	var res types.Object
 	if condition {
 		if hasFloat {
-			res = types.NewFloat(cumulFloat(float64(cumul), cumulF))
+			res = types.Float(cumulFloat(float64(cumul), cumulF))
 		} else {
-			res = types.NewInteger(cumul)
+			res = types.Integer(cumul)
 		}
 	} else {
 		res = types.None
@@ -91,19 +91,19 @@ func minusFunc(env types.Environment, args types.Iterable) types.Object {
 	arg1, _ := it.Next()
 	var res types.Object = types.None
 	switch casted := arg0.Eval(env).(type) {
-	case *types.Integer:
+	case types.Integer:
 		switch casted2 := arg1.Eval(env).(type) {
-		case *types.Integer:
-			res = types.NewInteger(casted.Inner - casted2.Inner)
-		case *types.Float:
-			res = types.NewFloat(float64(casted.Inner) - casted2.Inner)
+		case types.Integer:
+			res = types.Integer(casted - casted2)
+		case types.Float:
+			res = types.Float(float64(casted) - float64(casted2))
 		}
-	case *types.Float:
+	case types.Float:
 		switch casted2 := arg1.Eval(env).(type) {
-		case *types.Integer:
-			res = types.NewFloat(casted.Inner - float64(casted2.Inner))
-		case *types.Float:
-			res = types.NewFloat(casted.Inner - casted2.Inner)
+		case types.Integer:
+			res = types.Float(float64(casted2) - float64(casted2))
+		case types.Float:
+			res = types.Float(casted - casted2)
 		}
 	}
 	return res
@@ -115,10 +115,10 @@ func divFunc(env types.Environment, args types.Iterable) types.Object {
 	arg1, _ := it.Next()
 	var res types.Object
 	switch casted := arg0.Eval(env).(type) {
-	case *types.Integer:
-		res = partialDivideObject(float64(casted.Inner), arg1.Eval(env))
-	case *types.Float:
-		res = partialDivideObject(casted.Inner, arg1.Eval(env))
+	case types.Integer:
+		res = partialDivideObject(float64(casted), arg1.Eval(env))
+	case types.Float:
+		res = partialDivideObject(float64(casted), arg1.Eval(env))
 	default:
 		res = types.None
 	}
@@ -128,10 +128,10 @@ func divFunc(env types.Environment, args types.Iterable) types.Object {
 func partialDivideObject(a float64, b types.Object) types.Object {
 	var res types.Object
 	switch casted := b.(type) {
-	case *types.Integer:
-		res = divObject(a, float64(casted.Inner))
-	case *types.Float:
-		res = divObject(a, casted.Inner)
+	case types.Integer:
+		res = divObject(a, float64(casted))
+	case types.Float:
+		res = divObject(a, float64(casted))
 	default:
 		res = types.None
 	}
@@ -143,7 +143,7 @@ func divObject(a, b float64) types.Object {
 	if b == 0 {
 		res = types.None
 	} else {
-		res = types.NewFloat(a / b)
+		res = types.Float(a / b)
 	}
 	return res
 }
@@ -169,12 +169,12 @@ func intOpFunc(env types.Environment, args types.Iterable, intOp func(int64, int
 	arg0, _ := it.Next()
 	arg1, _ := it.Next()
 	var res types.Object = types.None
-	a, ok := arg0.Eval(env).(*types.Integer)
+	a, ok := arg0.Eval(env).(types.Integer)
 	if ok {
-		b, ok := arg1.Eval(env).(*types.Integer)
+		b, ok := arg1.Eval(env).(types.Integer)
 		if ok {
-			if bI := b.Inner; bI != 0 {
-				res = types.NewInteger(intOp(a.Inner, bI))
+			if b != 0 {
+				res = types.Integer(intOp(int64(a), int64(b)))
 			}
 		}
 	}

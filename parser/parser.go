@@ -27,7 +27,7 @@ import (
 const AttributeName = "attribute"
 const ListName = "List"
 
-var ListId = types.NewIdentifier(ListName)
+var ListId = types.MakeIdentifier(ListName)
 
 type stack[T any] struct {
 	inner []T

@@ -93,18 +93,18 @@ func valueToObject(value reflect.Value) Object {
 				res = False
 			}
 		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-			res = NewInteger(value.Int())
+			res = Integer(value.Int())
 		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-			res = NewInteger(int64(value.Uint()))
+			res = Integer(int64(value.Uint()))
 		case reflect.Float32, reflect.Float64:
-			res = NewFloat(value.Float())
+			res = Float(value.Float())
 		case reflect.Complex64, reflect.Complex128:
-			res = NewString(fmt.Sprint(value.Complex()))
+			res = String(fmt.Sprint(value.Complex()))
 		case reflect.String:
-			res = NewString(value.String())
+			res = String(value.String())
 		case reflect.Array, reflect.Slice:
 			size := value.Len()
-			l := &List{categories: makeCategories(), inner: make([]Object, 0, size)}
+			l := &List{categories: map[string]NoneType{}, inner: make([]Object, 0, size)}
 			for index := 0; index < size; index++ {
 				l.Add(valueToObject(value.Index(index)))
 			}

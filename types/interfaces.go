@@ -19,11 +19,6 @@ package types
 
 import "io"
 
-type Categorizable interface {
-	AddCategory(string)
-	HasCategory(string) bool
-}
-
 type Loadable interface {
 	Load(Object) Object
 }
@@ -47,7 +42,6 @@ type Environment interface {
 }
 
 type Object interface {
-	Categorizable
 	io.WriterTo
 	Eval(Environment) Object
 }
@@ -59,6 +53,7 @@ type Addable interface {
 
 type Sizable interface {
 	Size() *Integer
+	SizeInt() int
 }
 
 type Iterator interface {

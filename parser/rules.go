@@ -57,7 +57,7 @@ func handleWord(words <-chan string, listStack *stack[*types.List], done chan<- 
 func handleClassicWord(word string, list *types.List) {
 	if !nativeRules(word, list) {
 		args := types.NewList()
-		args.Add(types.NewString(word))
+		args.Add(types.String(word))
 		args.Add(list)
 		res := true
 		types.ForEach(customRules, func(object types.Object) bool {
@@ -65,12 +65,12 @@ func handleClassicWord(word string, list *types.List) {
 			if ok {
 				// The Apply must return true if it has created the node.
 				boolean, ok := rule.Apply(BuiltinsCopy, args).(types.Boolean)
-				res = !(ok && boolean.Inner)
+				res = !(ok && bool(boolean))
 			}
 			return res
 		})
 		if res {
-			list.Add(types.NewIdentifier(word))
+			list.Add(types.MakeIdentifier(word))
 		}
 	}
 }
@@ -105,7 +105,7 @@ func parseString(word string) (types.Object, bool) {
 	ok := word[0] == '"'
 	if ok {
 		extracted := strings.ReplaceAll(word[1:len(word)-1], "\\'", "'")
-		res = types.NewString(extracted)
+		res = types.String(extracted)
 	}
 	return res, ok
 }
@@ -133,7 +133,7 @@ func parseString2(word string) (types.Object, bool) {
 				extracted = append(extracted, char)
 			}
 		}
-		res = types.NewString(string(extracted))
+		res = types.String(extracted)
 	}
 	return res, ok
 }
@@ -145,7 +145,7 @@ func parseAttribute(word string) (types.Object, bool) {
 		elems := strings.Split(word[1:], "=")
 		attr := types.NewList()
 		attr.AddCategory(AttributeName)
-		attr.Add(types.NewString(elems[0]))
+		attr.Add(types.String(elems[0]))
 		if len(elems) > 1 {
 			handleClassicWord(elems[1], attr)
 		}
@@ -154,6 +154,7 @@ func parseAttribute(word string) (types.Object, bool) {
 	return res, ok
 }
 
+// TODO improve melting with string literal
 func parseList(word string) (types.Object, bool) {
 	var res types.Object = types.None
 	ok := word != SetName && strings.Contains(word, ":")
@@ -177,7 +178,7 @@ func parseInt(word string) (types.Object, bool) {
 	var res types.Object = types.None
 	ok := err == nil
 	if ok {
-		res = types.NewInteger(i)
+		res = types.Integer(i)
 	}
 	return res, ok
 }
@@ -187,7 +188,7 @@ func parseFloat(word string) (types.Object, bool) {
 	var res types.Object = types.None
 	ok := err == nil
 	if ok {
-		res = types.NewFloat(f)
+		res = types.Float(f)
 	}
 	return res, ok
 }

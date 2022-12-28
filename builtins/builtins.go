@@ -161,9 +161,20 @@ func initBuitins() types.BaseEnvironment {
 	base.StoreStr("Macro", types.MakeNativeAppliable(macroForm))
 
 	// TODO init stuff
-	// Quote, Unquote, type conversion
-	// List, Dict, Range, Enumerate, Add, Size, Del, Iter, Next, AddAttribute, HasAttribute
+	// Quote, Unquote
+	// Range, Enumerate, Add, Size, Del, Iter, Next, AddAttribute, HasAttribute
 	// And, Or, Not, ==, !=, >, >=, <, <=
+
+	// basic type creation and conversion
+	base.StoreStr("Boolean", types.MakeNativeAppliable(boolConvFunc))
+	base.StoreStr("Integer", types.MakeNativeAppliable(intConvFunc))
+	base.StoreStr("Float", types.MakeNativeAppliable(floatConvFunc))
+	base.StoreStr("String", types.MakeNativeAppliable(stringConvFunc))
+	base.StoreStr(parser.ListName, types.MakeNativeAppliable(listFunc))
+	base.StoreStr("Dict", types.MakeNativeAppliable(dictFunc))
+
+	// advanced looping
+	base.StoreStr("Range", types.MakeNativeAppliable(rangeFunc))
 
 	// some function to do math
 	base.StoreStr("+", types.MakeNativeAppliable(sumFunc))
@@ -182,25 +193,26 @@ func addHtmlElement(base types.BaseEnvironment, name string) {
 	base.StoreStr(name, CreateHtmlElement(name))
 }
 
-var openElement = types.NewString("<")
-var openCloseElement = types.NewString("</")
-var closeElement = types.NewString(">")
-var closeOpenElement = types.NewString("/>")
-var space = types.NewString(" ")
-var equalQuote = types.NewString("=\"")
-var quote = types.NewString("\"")
+var openElement = types.String("<")
+var openCloseElement = types.String("</")
+var closeElement = types.String(">")
+var closeOpenElement = types.String("/>")
+var space = types.String(" ")
+var equalQuote = types.String("=\"")
+var quote = types.String("\"")
 
 func CreateHtmlElement(name string) types.NativeAppliable {
-	wrappedName := types.NewString(name)
+	wrappedName := types.String(name)
 	return types.MakeNativeAppliable(func(env types.Environment, args types.Iterable) types.Object {
 		local := types.NewLocalEnvironment(env)
 		attrs := types.NewList()
 		childs := types.NewList()
-		types.ForEach(args, func(line types.Object) bool {
-			value := line.Eval(local)
+		types.ForEach(args, func(arg types.Object) bool {
+			value := arg.Eval(local)
 			_, ok := value.(types.NoneType)
 			if !ok {
-				if value.HasCategory(parser.AttributeName) {
+				list, ok := value.(*types.List)
+				if ok && list.HasCategory(parser.AttributeName) {
 					attrs.Add(value)
 				} else {
 					childs.Add(value)

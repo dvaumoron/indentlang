@@ -33,10 +33,10 @@ func (b BaseEnvironment) LoadStr(key string) (Object, bool) {
 }
 
 func Load(env StringLoadable, key Object) Object {
-	str, ok := key.(*String)
+	str, ok := key.(String)
 	var res Object = None
 	if ok {
-		res, _ = env.LoadStr(str.Inner)
+		res, _ = env.LoadStr(string(str))
 	}
 	return res
 }
@@ -46,9 +46,9 @@ func (b BaseEnvironment) Load(key Object) Object {
 }
 
 func (b BaseEnvironment) Store(key, value Object) {
-	str, ok := key.(*String)
+	str, ok := key.(String)
 	if ok {
-		b.objects[str.Inner] = value
+		b.objects[string(str)] = value
 	}
 }
 
@@ -57,9 +57,9 @@ func (b BaseEnvironment) StoreStr(key string, value Object) {
 }
 
 func (b BaseEnvironment) Delete(key Object) {
-	str, ok := key.(*String)
+	str, ok := key.(String)
 	if ok {
-		delete(b.objects, str.Inner)
+		delete(b.objects, string(str))
 	}
 }
 
@@ -71,6 +71,30 @@ func (b BaseEnvironment) CopyTo(other Environment) {
 	for key, value := range b.objects {
 		other.StoreStr(key, value)
 	}
+}
+
+func (b BaseEnvironment) Size() Integer {
+	return Integer(len(b.objects))
+}
+
+func (b BaseEnvironment) SizeInt() int {
+	return len(b.objects)
+}
+
+func (b BaseEnvironment) Iter() Iterator {
+	channel := make(chan Object)
+	go sendMapValue(b.objects, channel)
+	return &chanIterator{receiver: channel}
+}
+
+func sendMapValue(objects map[string]Object, transmitter chan<- Object) {
+	for key, value := range objects {
+		pair := NewList()
+		pair.Add(String(key))
+		pair.Add(value)
+		transmitter <- pair
+	}
+	close(transmitter)
 }
 
 func MakeBaseEnvironment() BaseEnvironment {

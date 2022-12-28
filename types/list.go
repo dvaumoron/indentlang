@@ -20,8 +20,25 @@ package types
 import "io"
 
 type List struct {
-	categories
-	inner []Object
+	categories map[string]NoneType
+	inner      []Object
+}
+
+func (l *List) AddCategory(category string) {
+	l.categories[category] = None
+}
+
+func (l *List) HasCategory(category string) bool {
+	_, ok := l.categories[category]
+	return ok
+}
+
+func (l *List) CopyCategories() map[string]NoneType {
+	copy := map[string]NoneType{}
+	for category := range l.categories {
+		copy[category] = None
+	}
+	return copy
 }
 
 func (l *List) Add(value Object) {
@@ -50,9 +67,9 @@ func (l *List) AddAll(it Iterable) {
 
 func convertToInt(arg Object, init int) int {
 	res := init
-	casted, ok := arg.(*Integer)
+	casted, ok := arg.(Integer)
 	if ok {
-		res = int(casted.Inner)
+		res = int(casted)
 	}
 	return res
 }
@@ -84,32 +101,32 @@ func (l *List) LoadInt(index int) Object {
 func (l *List) Load(key Object) Object {
 	var res Object = None
 	switch casted := key.(type) {
-	case *Integer:
-		res = l.LoadInt(int(casted.Inner))
-	case *Float:
-		res = l.LoadInt(int(casted.Inner))
+	case Integer:
+		res = l.LoadInt(int(casted))
+	case Float:
+		res = l.LoadInt(int(casted))
 	case *List:
 		max := len(l.inner)
 		start, end := extractIndex(casted.inner, max)
 		if 0 <= start && start <= end && end <= max {
-			res = &List{categories: l.categories.Copy(), inner: l.inner[start:end]}
+			res = &List{categories: l.CopyCategories(), inner: l.inner[start:end]}
 		}
 	}
 	return res
 }
 
 func (l *List) Store(key, value Object) {
-	integer, ok := key.(*Integer)
+	integer, ok := key.(Integer)
 	if ok {
-		index := int(integer.Inner)
+		index := int(integer)
 		if 0 <= index && index < len(l.inner) {
 			l.inner[index] = value
 		}
 	}
 }
 
-func (l *List) Size() *Integer {
-	return NewInteger(int64(len(l.inner)))
+func (l *List) Size() Integer {
+	return Integer(len(l.inner))
 }
 
 func (l *List) SizeInt() int {
@@ -173,7 +190,7 @@ func (l *List) Eval(env Environment) Object {
 		if appliable, ok := value0.(Appliable); ok {
 			res = appliable.Apply(env, it)
 		} else {
-			l2 := &List{categories: l.categories.Copy(), inner: make([]Object, 0, len(l.inner))}
+			l2 := &List{categories: l.CopyCategories(), inner: make([]Object, 0, len(l.inner))}
 			l2.Add(value0)
 			for _, value := range l.inner[1:] {
 				l2.Add(value.Eval(env))
@@ -185,5 +202,5 @@ func (l *List) Eval(env Environment) Object {
 }
 
 func NewList() *List {
-	return &List{categories: makeCategories()}
+	return &List{categories: map[string]NoneType{}}
 }
