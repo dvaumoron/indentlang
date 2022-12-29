@@ -67,12 +67,17 @@ func rangeFunc(env types.Environment, itArgs types.Iterator) types.Object {
 }
 
 type enumerateIterator struct {
-	types.Iterator
+	types.NoneType
+	inner types.Iterator
 	count int64
 }
 
+func (e *enumerateIterator) Iter() types.Iterator {
+	return e
+}
+
 func (e *enumerateIterator) Next() (types.Object, bool) {
-	value, ok := e.Iterator.Next()
+	value, ok := e.inner.Next()
 	e.count++
 	return types.NewList(types.Integer(e.count), value), ok
 }
@@ -82,7 +87,7 @@ func enumerateFunc(env types.Environment, itArgs types.Iterator) types.Object {
 	it, ok := arg0.Eval(env).(types.Iterable)
 	var res types.Object = types.None
 	if ok {
-		res = &enumerateIterator{Iterator: it.Iter(), count: 1}
+		res = &enumerateIterator{inner: it.Iter(), count: 1}
 	}
 	return res
 }
@@ -119,17 +124,22 @@ func sizeFunc(env types.Environment, itArgs types.Iterator) types.Object {
 }
 
 type evalIterator struct {
-	types.Iterator
-	env types.Environment
+	types.NoneType
+	inner types.Iterator
+	env   types.Environment
+}
+
+func (e *evalIterator) Iter() types.Iterator {
+	return e
 }
 
 func (e *evalIterator) Next() (types.Object, bool) {
-	value, ok := e.Iterator.Next()
+	value, ok := e.inner.Next()
 	return value.Eval(e.env), ok
 }
 
 func newEvalIterator(it types.Iterator, env types.Environment) *evalIterator {
-	return &evalIterator{Iterator: it, env: env}
+	return &evalIterator{inner: it, env: env}
 }
 
 func addFunc(env types.Environment, itArgs types.Iterator) types.Object {
