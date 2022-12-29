@@ -110,13 +110,6 @@ func (c *classicKind) defaultRetrieveArgs(env types.Environment, local types.Env
 	storeArgsInIds(c.ids, itArgs, local)
 }
 
-func storeArgsInIds(ids []string, itArgs types.Iterator, env types.Environment) {
-	for _, id := range ids {
-		arg, _ := itArgs.Next()
-		env.StoreStr(id, arg)
-	}
-}
-
 func newClassicKind(kind *noArgsKind, ids []string) *classicKind {
 	return &classicKind{noArgsKind: kind, ids: ids}
 }

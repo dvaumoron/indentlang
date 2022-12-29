@@ -95,7 +95,8 @@ func innerImporter(basePath, totalPath string) {
 	env := types.NewLocalEnvironment(Builtins)
 	env.StoreStr(ImportName, makeCheckedImportDirective(basePath))
 	// nested environment to isolate the directive Import, this avoid copying
-	local := types.NewLocalEnvironment(env)
+	// (use types.Environment to get untyped nil)
+	var local types.Environment = types.NewLocalEnvironment(env)
 	tmplData, err := os.ReadFile(totalPath)
 	if err == nil {
 		var node types.Object

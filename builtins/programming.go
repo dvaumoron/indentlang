@@ -77,6 +77,13 @@ func extractIds(l *types.List) []string {
 	return ids
 }
 
+func storeArgsInIds(ids []string, itArgs types.Iterator, env types.Environment) {
+	for _, id := range ids {
+		arg, _ := itArgs.Next()
+		env.StoreStr(id, arg)
+	}
+}
+
 func whileForm(env types.Environment, itArgs types.Iterator) types.Object {
 	res := types.NewList()
 	arg0, _ := itArgs.Next()
