@@ -149,11 +149,11 @@ func (it *chanIterator) Next() (Object, bool) {
 
 func (l *List) Iter() Iterator {
 	channel := make(chan Object)
-	go sendListValue(l.inner, channel)
+	go sendSliceValue(l.inner, channel)
 	return &chanIterator{receiver: channel}
 }
 
-func sendListValue(objects []Object, transmitter chan<- Object) {
+func sendSliceValue(objects []Object, transmitter chan<- Object) {
 	for _, value := range objects {
 		transmitter <- value
 	}

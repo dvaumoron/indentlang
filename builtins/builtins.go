@@ -174,7 +174,12 @@ func initBuitins() types.BaseEnvironment {
 	base.StoreStr("Not", types.MakeNativeAppliable(notFunc))
 	base.StoreStr("And", types.MakeNativeAppliable(andFunc))
 	base.StoreStr("Or", types.MakeNativeAppliable(orFunc))
-	// ==, !=, >, >=, <, <=
+	base.StoreStr("==", types.MakeNativeAppliable(equalsFunc))
+	base.StoreStr("!=", types.MakeNativeAppliable(notEqualsFunc))
+	base.StoreStr(">", types.MakeNativeAppliable(greaterThanFunc))
+	base.StoreStr(">=", types.MakeNativeAppliable(greaterEqualFunc))
+	base.StoreStr("<", types.MakeNativeAppliable(lessThanFunc))
+	base.StoreStr("<=", types.MakeNativeAppliable(lessEqualFunc))
 
 	// advanced looping
 	base.StoreStr("Range", types.MakeNativeAppliable(rangeFunc))

@@ -25,22 +25,21 @@ type cumulCarac struct {
 	cumulFloat func(float64, float64) float64
 }
 
-type Number interface {
+type number interface {
 	int64 | float64
 }
 
-func addNumber[N Number](a, b N) N {
+func addNumber[N number](a, b N) N {
 	return a + b
 }
 
-func multNumber[N Number](a, b N) N {
+func multNumber[N number](a, b N) N {
 	return a * b
 }
 
 var sumCarac = &cumulCarac{
 	init: 0, cumulInt: addNumber[int64], cumulFloat: addNumber[float64],
 }
-
 var productCarac = &cumulCarac{
 	init: 1, cumulInt: multNumber[int64], cumulFloat: multNumber[float64],
 }
