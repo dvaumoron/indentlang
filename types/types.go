@@ -113,17 +113,17 @@ func (s String) Size() int {
 	return len(s)
 }
 
-type Identifer struct {
+type Identifier struct {
 	String
 }
 
-func (i Identifer) Eval(env Environment) Object {
+func (i Identifier) Eval(env Environment) Object {
 	value, _ := env.LoadStr(string(i.String))
 	return value
 }
 
-func MakeIdentifier(s string) Identifer {
-	return Identifer{String: String(s)}
+func MakeIdentifier(s string) Identifier {
+	return Identifier{String: String(s)}
 }
 
 type NativeAppliable struct {

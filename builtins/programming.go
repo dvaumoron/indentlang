@@ -41,7 +41,7 @@ func forForm(env types.Environment, itArgs types.Iterator) types.Object {
 	if ok {
 		bloc := types.NewList().AddAll(itArgs)
 		switch casted := arg0.(type) {
-		case types.Identifer:
+		case types.Identifier:
 			id := string(casted.String)
 			types.ForEach(it, func(value types.Object) bool {
 				env.StoreStr(id, value)
@@ -68,7 +68,7 @@ func forForm(env types.Environment, itArgs types.Iterator) types.Object {
 func extractIds(l *types.List) []string {
 	ids := make([]string, 0, l.Size())
 	types.ForEach(l, func(value types.Object) bool {
-		id, ok := value.(types.Identifer)
+		id, ok := value.(types.Identifier)
 		if ok {
 			ids = append(ids, string(id.String))
 		}
@@ -112,14 +112,14 @@ func setForm(env types.Environment, itArgs types.Iterator) types.Object {
 	arg1, ok := itArgs.Next()
 	if ok {
 		switch casted := arg0.(type) {
-		case types.Identifer:
+		case types.Identifier:
 			env.StoreStr(string(casted.String), arg1.Eval(env))
 		case *types.List:
 			it, ok := arg1.Eval(env).(types.Iterable)
 			if ok {
 				it2 := it.Iter()
 				types.ForEach(casted, func(value types.Object) bool {
-					id, ok := value.(types.Identifer)
+					id, ok := value.(types.Identifier)
 					if ok {
 						value, _ := it2.Next()
 						env.StoreStr(string(id.String), value)
@@ -140,8 +140,8 @@ func getForm(env types.Environment, itArgs types.Iterator) types.Object {
 			current, ok := res.(types.StringLoadable)
 			res = types.None
 			if ok {
-				var id types.Identifer
-				id, ok = value.(types.Identifer)
+				var id types.Identifier
+				id, ok = value.(types.Identifier)
 				if ok {
 					res, ok = current.LoadStr(string(id.String))
 				}

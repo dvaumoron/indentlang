@@ -199,7 +199,7 @@ func evalBody(body *types.List, local types.Environment) {
 func newUserAppliable(env types.Environment, declared types.Object, body *types.List, baseKind *noArgsKind) *userAppliable {
 	var kind kindAppliable = baseKind
 	switch casted := declared.(type) {
-	case types.Identifer:
+	case types.Identifier:
 		kind = newVarArgsKind(baseKind, string(casted.String))
 	case *types.List:
 		if casted.Size() != 0 {
@@ -219,7 +219,7 @@ func macroForm(env types.Environment, itArgs types.Iterator) types.Object {
 
 func appliableForm(env types.Environment, itArgs types.Iterator, kind *noArgsKind) types.Object {
 	arg0, _ := itArgs.Next()
-	name, ok := arg0.(types.Identifer)
+	name, ok := arg0.(types.Identifier)
 	if ok {
 		declared, _ := itArgs.Next()
 		body := types.NewList().AddAll(itArgs)
