@@ -25,6 +25,16 @@ import (
 	"github.com/dvaumoron/indentlang/types"
 )
 
+func identifierConvFunc(env types.Environment, itArgs types.Iterator) types.Object {
+	arg, _ := itArgs.Next()
+	s, ok := arg.Eval(env).(types.String)
+	var res types.Object = types.None
+	if ok {
+		res = types.Identifier(s)
+	}
+	return res
+}
+
 func boolConvFunc(env types.Environment, itArgs types.Iterator) types.Object {
 	arg, _ := itArgs.Next()
 	return types.Boolean(extractBoolean(arg.Eval(env)))

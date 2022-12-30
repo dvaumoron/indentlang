@@ -163,6 +163,7 @@ func initBuitins() types.BaseEnvironment {
 	base.StoreStr("Macro", types.MakeNativeAppliable(macroForm))
 
 	// basic type creation and conversion
+	base.StoreStr("Identifier", types.MakeNativeAppliable(identifierConvFunc))
 	base.StoreStr("Boolean", types.MakeNativeAppliable(boolConvFunc))
 	base.StoreStr("Integer", types.MakeNativeAppliable(intConvFunc))
 	base.StoreStr("Float", types.MakeNativeAppliable(floatConvFunc))
@@ -198,8 +199,17 @@ func initBuitins() types.BaseEnvironment {
 	base.StoreStr("//", types.MakeNativeAppliable(floorDivFunc))
 	base.StoreStr("%", types.MakeNativeAppliable(remainderFunc))
 
+	// advanced programming
+	base.StoreStr("Quote", types.MakeNativeAppliable(quoteForm))
+	base.StoreStr(unquoteName, types.MakeNativeAppliable(unquoteFunc)) // not very useful
+	base.StoreStr("Del", types.MakeNativeAppliable(delForm))
+	base.StoreStr("AddCategory", types.MakeNativeAppliable(addCategoryFunc))
+	base.StoreStr("HasCategory", types.MakeNativeAppliable(hasCategoryFunc))
+	base.StoreStr("AddCustomRule", types.MakeNativeAppliable(addCustomRuleFunc))
+	base.StoreStr("ParseWord", types.MakeNativeAppliable(parseWordFunc))
+
 	// TODO init stuff
-	// Quote, Unquote, Del, AddAttribute, HasAttribute
+	// lack of string utilities
 
 	// give parser package a protected copy to use in user custom rules
 	parser.BuiltinsCopy = types.NewLocalEnvironment(base)

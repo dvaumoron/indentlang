@@ -22,13 +22,13 @@ import (
 	"github.com/dvaumoron/indentlang/types"
 )
 
-var openElement = types.String("<")
-var openCloseElement = types.String("</")
-var closeElement = types.String(">")
-var closeOpenElement = types.String("/>")
-var space = types.String(" ")
-var equalQuote = types.String("=\"")
-var quote = types.String("\"")
+const openElement types.String = "<"
+const openCloseElement types.String = "</"
+const closeElement types.String = ">"
+const closeOpenElement types.String = "/>"
+const space types.String = " "
+const equalQuote types.String = "=\""
+const quote types.String = "\""
 
 func addHtmlElement(base types.BaseEnvironment, name string) {
 	base.StoreStr(name, CreateHtmlElement(name))
@@ -37,11 +37,10 @@ func addHtmlElement(base types.BaseEnvironment, name string) {
 func CreateHtmlElement(name string) types.NativeAppliable {
 	wrappedName := types.String(name)
 	return types.MakeNativeAppliable(func(env types.Environment, itArgs types.Iterator) types.Object {
-		local := types.NewLocalEnvironment(env)
 		attrs := types.NewList()
 		childs := types.NewList()
 		types.ForEach(itArgs, func(arg types.Object) bool {
-			value := arg.Eval(local)
+			value := arg.Eval(env)
 			switch casted := value.(type) {
 			case types.NoneType:
 				// ignore None

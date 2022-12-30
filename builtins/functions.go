@@ -28,7 +28,6 @@ type returnMarker struct{}
 
 type kindAppliable interface {
 	initEnv(types.Environment) types.Environment
-	initMergeEnv(types.Environment, types.Environment) types.Environment
 	retrieveArgs(types.Environment, types.Environment, types.Iterator)
 	defaultRetrieveArgs(types.Environment, types.Environment, types.Iterator)
 	evalReturn(types.Environment, types.Environment) types.Object
@@ -46,10 +45,6 @@ func (n *noArgsKind) initEnv(env types.Environment) types.Environment {
 	return local
 }
 
-func (n *noArgsKind) initMergeEnv(creationEnv, callEnv types.Environment) types.Environment {
-	return n.initEnv(types.NewMergeEnvironment(creationEnv, callEnv))
-}
-
 func (*noArgsKind) retrieveArgs(types.Environment, types.Environment, types.Iterator) {
 }
 
@@ -59,6 +54,10 @@ func (*noArgsKind) defaultRetrieveArgs(types.Environment, types.Environment, typ
 func (n *noArgsKind) evalReturn(env types.Environment, local types.Environment) types.Object {
 	returnValue, _ := local.LoadStr(hiddenReturnName)
 	return n.evalObject(returnValue, env)
+}
+
+func noEval[T any](o T, env types.Environment) T {
+	return o
 }
 
 var functionKind = &noArgsKind{
@@ -79,9 +78,7 @@ var functionKind = &noArgsKind{
 	evalArgs: func(itArgs types.Iterator, env types.Environment) types.Iterator {
 		return newEvalIterator(itArgs, env)
 	},
-	evalObject: func(res types.Object, env types.Environment) types.Object {
-		return res
-	},
+	evalObject: noEval[types.Object],
 }
 var macroKind = &noArgsKind{
 	returnForm: types.MakeNativeAppliable(func(env types.Environment, itArgs types.Iterator) types.Object {
@@ -89,9 +86,7 @@ var macroKind = &noArgsKind{
 		env.StoreStr(hiddenReturnName, arg0.Eval(env))
 		panic(returnMarker{})
 	}),
-	evalArgs: func(itArgs types.Iterator, env types.Environment) types.Iterator {
-		return itArgs
-	},
+	evalArgs: noEval[types.Iterator],
 	evalObject: func(res types.Object, env types.Environment) types.Object {
 		return res.Eval(env)
 	},
@@ -138,9 +133,9 @@ type userAppliable struct {
 	kindAppliable
 }
 
-func (u *userAppliable) Apply(callEnv types.Environment, itArgs types.Iterator) (res types.Object) {
+func (u *userAppliable) Apply(callEnv types.Environment, args types.Iterable) (res types.Object) {
 	local := u.initEnv(u.creationEnv)
-	u.retrieveArgs(callEnv, local, itArgs)
+	u.retrieveArgs(callEnv, local, args.Iter())
 	defer func() {
 		if r := recover(); r != nil {
 			_, ok := r.(returnMarker)
@@ -155,9 +150,11 @@ func (u *userAppliable) Apply(callEnv types.Environment, itArgs types.Iterator) 
 	return types.None
 }
 
-func (u *userAppliable) ApplyWithData(data any, callEnv types.Environment, itArgs types.Iterator) (res types.Object) {
-	local := u.initMergeEnv(types.NewDataEnvironment(data, u.creationEnv), callEnv)
-	u.retrieveArgs(callEnv, local, itArgs)
+func (u *userAppliable) ApplyWithData(data any, callEnv types.Environment, args types.Iterable) (res types.Object) {
+	local := u.initEnv(types.NewMergeEnvironment(
+		types.NewDataEnvironment(data, u.creationEnv), callEnv,
+	))
+	u.retrieveArgs(callEnv, local, args.Iter())
 	defer func() {
 		if r := recover(); r != nil {
 			_, ok := r.(returnMarker)
@@ -200,7 +197,7 @@ func newUserAppliable(env types.Environment, declared types.Object, body *types.
 	var kind kindAppliable = baseKind
 	switch casted := declared.(type) {
 	case types.Identifier:
-		kind = newVarArgsKind(baseKind, string(casted.String))
+		kind = newVarArgsKind(baseKind, string(casted))
 	case *types.List:
 		if casted.Size() != 0 {
 			kind = newClassicKind(baseKind, extractIds(casted))
@@ -224,7 +221,7 @@ func appliableForm(env types.Environment, itArgs types.Iterator, kind *noArgsKin
 		declared, _ := itArgs.Next()
 		body := types.NewList().AddAll(itArgs)
 		if body.Size() != 0 {
-			env.StoreStr(string(name.String), newUserAppliable(env, declared, body, kind))
+			env.StoreStr(string(name), newUserAppliable(env, declared, body, kind))
 		}
 	}
 	return types.None

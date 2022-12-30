@@ -113,17 +113,15 @@ func (s String) Size() int {
 	return len(s)
 }
 
-type Identifier struct {
-	String
+type Identifier string
+
+func (i Identifier) WriteTo(w io.Writer) (int64, error) {
+	return 0, nil
 }
 
 func (i Identifier) Eval(env Environment) Object {
-	value, _ := env.LoadStr(string(i.String))
+	value, _ := env.LoadStr(string(i))
 	return value
-}
-
-func MakeIdentifier(s string) Identifier {
-	return Identifier{String: String(s)}
 }
 
 type NativeAppliable struct {

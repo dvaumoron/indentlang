@@ -42,7 +42,7 @@ func forForm(env types.Environment, itArgs types.Iterator) types.Object {
 		bloc := types.NewList().AddAll(itArgs)
 		switch casted := arg0.(type) {
 		case types.Identifier:
-			id := string(casted.String)
+			id := string(casted)
 			types.ForEach(it, func(value types.Object) bool {
 				env.StoreStr(id, value)
 				evalBloc(bloc, res, env)
@@ -70,7 +70,7 @@ func extractIds(l *types.List) []string {
 	types.ForEach(l, func(value types.Object) bool {
 		id, ok := value.(types.Identifier)
 		if ok {
-			ids = append(ids, string(id.String))
+			ids = append(ids, string(id))
 		}
 		return ok
 	})
@@ -113,7 +113,7 @@ func setForm(env types.Environment, itArgs types.Iterator) types.Object {
 	if ok {
 		switch casted := arg0.(type) {
 		case types.Identifier:
-			env.StoreStr(string(casted.String), arg1.Eval(env))
+			env.StoreStr(string(casted), arg1.Eval(env))
 		case *types.List:
 			it, ok := arg1.Eval(env).(types.Iterable)
 			if ok {
@@ -122,7 +122,7 @@ func setForm(env types.Environment, itArgs types.Iterator) types.Object {
 					id, ok := value.(types.Identifier)
 					if ok {
 						value, _ := it2.Next()
-						env.StoreStr(string(id.String), value)
+						env.StoreStr(string(id), value)
 					}
 					return ok
 				})
@@ -137,13 +137,14 @@ func getForm(env types.Environment, itArgs types.Iterator) types.Object {
 	if ok {
 		res = res.Eval(env)
 		types.ForEach(itArgs, func(value types.Object) bool {
-			current, ok := res.(types.StringLoadable)
+			var current types.StringLoadable
+			current, ok = res.(types.StringLoadable)
 			res = types.None
 			if ok {
 				var id types.Identifier
 				id, ok = value.(types.Identifier)
 				if ok {
-					res, ok = current.LoadStr(string(id.String))
+					res, ok = current.LoadStr(string(id))
 				}
 			}
 			return ok

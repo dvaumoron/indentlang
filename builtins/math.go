@@ -71,15 +71,13 @@ func cumulFunc(env types.Environment, itArgs types.Iterator, carac *cumulCarac) 
 		}
 		return condition
 	})
-	var res types.Object
+	var res types.Object = types.None
 	if condition {
 		if hasFloat {
 			res = types.Float(cumulFloat(float64(cumul), cumulF))
 		} else {
 			res = types.Integer(cumul)
 		}
-	} else {
-		res = types.None
 	}
 	return res
 }
@@ -110,27 +108,23 @@ func minusFunc(env types.Environment, itArgs types.Iterator) types.Object {
 func divFunc(env types.Environment, itArgs types.Iterator) types.Object {
 	arg0, _ := itArgs.Next()
 	arg1, _ := itArgs.Next()
-	var res types.Object
+	var res types.Object = types.None
 	switch casted := arg0.Eval(env).(type) {
 	case types.Integer:
 		res = partialDivideObject(float64(casted), arg1.Eval(env))
 	case types.Float:
 		res = partialDivideObject(float64(casted), arg1.Eval(env))
-	default:
-		res = types.None
 	}
 	return res
 }
 
 func partialDivideObject(a float64, b types.Object) types.Object {
-	var res types.Object
+	var res types.Object = types.None
 	switch casted := b.(type) {
 	case types.Integer:
 		res = divObject(a, float64(casted))
 	case types.Float:
 		res = divObject(a, float64(casted))
-	default:
-		res = types.None
 	}
 	return res
 }

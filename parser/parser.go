@@ -26,8 +26,7 @@ import (
 
 const AttributeName = "attribute"
 const ListName = "List"
-
-var ListId = types.MakeIdentifier(ListName)
+const ListId types.Identifier = ListName
 
 type stack[T any] struct {
 	inner []T
@@ -63,7 +62,7 @@ func Parse(str string) (*types.List, error) {
 LineLoop:
 	for _, line := range strings.Split(str, "\n") {
 		if trimmed := strings.TrimSpace(line); trimmed != "" && trimmed[0] != '#' {
-			var index int
+			index := 0
 			var char rune
 			for index, char = range line {
 				if char != ' ' && char != '\t' {

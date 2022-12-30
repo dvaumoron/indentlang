@@ -26,7 +26,7 @@ import (
 
 const SetName = ":="
 
-var customRules = types.NewList()
+var CustomRules = types.NewList()
 
 var wordParsers []types.ConvertString
 
@@ -48,27 +48,30 @@ func handleWord(words <-chan string, listStack *stack[*types.List], done chan<- 
 		} else if word == ")" {
 			listStack.pop()
 		} else {
-			handleClassicWord(word, listStack.peek())
+			HandleClassicWord(word, listStack.peek())
 		}
 	}
 	done <- types.None
 }
 
-func handleClassicWord(word string, list *types.List) {
+func HandleClassicWord(word string, list *types.List) {
 	if !nativeRules(word, list) {
-		args := types.NewList(types.String(word), list)
+		args := types.NewList(types.String(word))
 		res := true
-		types.ForEach(customRules, func(object types.Object) bool {
+		types.ForEach(CustomRules, func(object types.Object) bool {
 			rule, ok := object.(types.Appliable)
 			if ok {
-				// The Apply must return true if it has created the node.
-				boolean, ok := rule.Apply(BuiltinsCopy, args).(types.Boolean)
-				res = !(ok && bool(boolean))
+				// The Apply must return None if it fails.
+				node := rule.Apply(BuiltinsCopy, args)
+				_, res = node.(types.NoneType)
+				if !res {
+					list.Add(node)
+				}
 			}
 			return res
 		})
 		if res {
-			list.Add(types.MakeIdentifier(word))
+			list.Add(types.Identifier(word))
 		}
 	}
 }
@@ -99,7 +102,7 @@ func parseNone(word string) (types.Object, bool) {
 }
 
 func parseString(word string) (types.Object, bool) {
-	var res types.Object = types.None
+	var res types.Object
 	ok := word[0] == '"'
 	if ok {
 		extracted := strings.ReplaceAll(word[1:len(word)-1], "\\'", "'")
@@ -109,7 +112,7 @@ func parseString(word string) (types.Object, bool) {
 }
 
 func parseString2(word string) (types.Object, bool) {
-	var res types.Object = types.None
+	var res types.Object
 	ok := word[0] == '\''
 	if ok {
 		skipApos := false
@@ -137,14 +140,14 @@ func parseString2(word string) (types.Object, bool) {
 }
 
 func parseAttribute(word string) (types.Object, bool) {
-	var res types.Object = types.None
+	var res types.Object
 	ok := word[0] == '@'
 	if ok {
 		elems := strings.Split(word[1:], "=")
 		attr := types.NewList(types.String(elems[0]))
 		attr.AddCategory(AttributeName)
 		if len(elems) > 1 {
-			handleClassicWord(elems[1], attr)
+			HandleClassicWord(elems[1], attr)
 		}
 		res = attr
 	}
@@ -161,7 +164,7 @@ func parseList(word string) (types.Object, bool) {
 			if elem == "" {
 				nodeList.Add(types.None)
 			} else {
-				handleClassicWord(elem, nodeList)
+				HandleClassicWord(elem, nodeList)
 			}
 		}
 		res = nodeList
@@ -171,20 +174,10 @@ func parseList(word string) (types.Object, bool) {
 
 func parseInt(word string) (types.Object, bool) {
 	i, err := strconv.ParseInt(word, 10, 64)
-	var res types.Object = types.None
-	ok := err == nil
-	if ok {
-		res = types.Integer(i)
-	}
-	return res, ok
+	return types.Integer(i), err == nil
 }
 
 func parseFloat(word string) (types.Object, bool) {
 	f, err := strconv.ParseFloat(word, 64)
-	var res types.Object = types.None
-	ok := err == nil
-	if ok {
-		res = types.Float(f)
-	}
-	return res, ok
+	return types.Float(f), err == nil
 }

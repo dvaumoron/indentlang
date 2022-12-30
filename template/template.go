@@ -52,8 +52,7 @@ func ParseWithImport(importDirective types.Appliable, filePath string) (*Templat
 	env := types.NewLocalEnvironment(builtins.Builtins)
 	env.StoreStr(builtins.ImportName, importDirective)
 
-	args := types.NewList(types.String(filePath))
-	importDirective.Apply(env, args)
+	importDirective.Apply(env, types.NewList(types.String(filePath)))
 
 	var tmpl *Template
 	var err error

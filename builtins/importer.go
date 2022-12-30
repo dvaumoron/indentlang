@@ -130,7 +130,7 @@ func makeCheckedImportDirective(basePath string) types.NativeAppliable {
 		if !ok {
 			res = types.MakeNativeAppliable(func(env types.Environment, itArgs types.Iterator) types.Object {
 				arg0, _ := itArgs.Next()
-				filePath, ok := arg0.(types.String)
+				filePath, ok := arg0.Eval(env).(types.String)
 				if ok {
 					response := make(chan types.Environment)
 					requestToImporter <- importRequest{
