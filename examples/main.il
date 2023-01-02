@@ -1,27 +1,18 @@
 html
     head
         meta @charset="utf-8"
-        title "Title - " PageTitle
+        title "Title - " value1
         link @rel="stylesheet" @type="text/css" @href="/static/main.css"
         script @type="text/javascript" @src="/static/main.js"
         WidgetHeader
     body
         header
-            h1 PageTitle
-            If LoginUrl
-                p
-                    If Login (Welcome "&nbsp;" Login "&nbsp;")
-                    a @href=LoginUrl LoginLinkName
-            If ErrorMsg
-                div @class="error" ErrorMsg
+            h1 value1
             p
-                For page Ariane
-                    := url (. page Url)
-                    "/&nbsp;" (a @href=url (. page Name)) "&nbsp;"
-            ul
-                For page SubPages
-                    := url (. page Url)
-                    li (a @href=url (. page Name))
+                If value2 ("Welcome&nbsp;" value2 "&nbsp;")
+                a @href=value3 value4
         main
             WidgetBody
         footer
+            For arg values
+                p arg
