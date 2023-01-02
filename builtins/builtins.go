@@ -192,12 +192,18 @@ func initBuitins() types.BaseEnvironment {
 	base.StoreStr("AddAll", types.MakeNativeAppliable(addAllFunc))
 
 	// some function to do math
-	base.StoreStr("+", types.MakeNativeAppliable(sumFunc))
-	base.StoreStr("-", types.MakeNativeAppliable(minusFunc))
-	base.StoreStr("*", types.MakeNativeAppliable(productFunc))
-	base.StoreStr("/", types.MakeNativeAppliable(divFunc))
-	base.StoreStr("//", types.MakeNativeAppliable(floorDivFunc))
-	base.StoreStr("%", types.MakeNativeAppliable(remainderFunc))
+	base.StoreStr(sumName, types.MakeNativeAppliable(sumFunc))
+	base.StoreStr(minusName, types.MakeNativeAppliable(minusFunc))
+	base.StoreStr(productName, types.MakeNativeAppliable(productFunc))
+	base.StoreStr(divideName, types.MakeNativeAppliable(divideFunc))
+	base.StoreStr(floorDivideName, types.MakeNativeAppliable(floorDivideFunc))
+	base.StoreStr(remainderName, types.MakeNativeAppliable(remainderFunc))
+	base.StoreStr("+=", types.MakeNativeAppliable(sumSetForm))
+	base.StoreStr("-=", types.MakeNativeAppliable(minusSetForm))
+	base.StoreStr("*=", types.MakeNativeAppliable(productSetForm))
+	base.StoreStr("/=", types.MakeNativeAppliable(divideSetForm))
+	base.StoreStr("//=", types.MakeNativeAppliable(floorDivideSetForm))
+	base.StoreStr("%=", types.MakeNativeAppliable(remainderSetForm))
 
 	// advanced programming
 	base.StoreStr("Quote", types.MakeNativeAppliable(quoteForm))

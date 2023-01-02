@@ -138,10 +138,10 @@ func addCustomRuleFunc(env types.Environment, itArgs types.Iterator) types.Objec
 
 func parseWordFunc(env types.Environment, itArgs types.Iterator) types.Object {
 	arg, _ := itArgs.Next()
-	str, ok := arg.Eval(env).(types.String)
+	str, _ := arg.Eval(env).(types.String)
 	list := types.NewList()
-	if ok {
+	if str != "" { // non string and empty string are treated the same way thanks to type assertion
 		parser.HandleClassicWord(string(str), list)
 	}
-	return list.LoadInt(0)
+	return list.LoadInt(0) // None if the list is still empty
 }

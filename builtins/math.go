@@ -17,7 +17,17 @@
  */
 package builtins
 
-import "github.com/dvaumoron/indentlang/types"
+import (
+	"github.com/dvaumoron/indentlang/parser"
+	"github.com/dvaumoron/indentlang/types"
+)
+
+const sumName = "+"
+const minusName = "-"
+const productName = "*"
+const divideName = "/"
+const floorDivideName = "//"
+const remainderName = "%"
 
 type cumulCarac struct {
 	init       int64
@@ -97,7 +107,7 @@ func minusFunc(env types.Environment, itArgs types.Iterator) types.Object {
 	case types.Float:
 		switch casted2 := arg1.Eval(env).(type) {
 		case types.Integer:
-			res = types.Float(float64(casted2) - float64(casted2))
+			res = types.Float(float64(casted) - float64(casted2))
 		case types.Float:
 			res = types.Float(casted - casted2)
 		}
@@ -105,68 +115,90 @@ func minusFunc(env types.Environment, itArgs types.Iterator) types.Object {
 	return res
 }
 
-func divFunc(env types.Environment, itArgs types.Iterator) types.Object {
+func divideFunc(env types.Environment, itArgs types.Iterator) types.Object {
 	arg0, _ := itArgs.Next()
 	arg1, _ := itArgs.Next()
 	var res types.Object = types.None
 	switch casted := arg0.Eval(env).(type) {
 	case types.Integer:
-		res = partialDivideObject(float64(casted), arg1.Eval(env))
+		res = divideObject(float64(casted), arg1.Eval(env))
 	case types.Float:
-		res = partialDivideObject(float64(casted), arg1.Eval(env))
+		res = divideObject(float64(casted), arg1.Eval(env))
 	}
 	return res
 }
 
-func partialDivideObject(a float64, b types.Object) types.Object {
+func divideObject(a float64, b types.Object) types.Object {
 	var res types.Object = types.None
 	switch casted := b.(type) {
 	case types.Integer:
-		res = divObject(a, float64(casted))
+		if casted != 0 {
+			res = types.Float(a / float64(casted))
+		}
 	case types.Float:
-		res = divObject(a, float64(casted))
+		if casted != 0 {
+			res = types.Float(a / float64(casted))
+		}
 	}
 	return res
 }
 
-func divObject(a, b float64) types.Object {
-	var res types.Object
-	if b == 0 {
-		res = types.None
-	} else {
-		res = types.Float(a / b)
-	}
-	return res
-}
-
-func floorDivOp(a, b int64) int64 {
+func floorDivideOperator(a, b int64) int64 {
 	return a / b
 }
 
-func remainderOp(a, b int64) int64 {
+func remainderOperator(a, b int64) int64 {
 	return a % b
 }
 
-func floorDivFunc(env types.Environment, itArgs types.Iterator) types.Object {
-	return intOpFunc(env, itArgs, floorDivOp)
+func floorDivideFunc(env types.Environment, itArgs types.Iterator) types.Object {
+	return intOperatorFunc(env, itArgs, floorDivideOperator)
 }
 
 func remainderFunc(env types.Environment, itArgs types.Iterator) types.Object {
-	return intOpFunc(env, itArgs, remainderOp)
+	return intOperatorFunc(env, itArgs, remainderOperator)
 }
 
-func intOpFunc(env types.Environment, itArgs types.Iterator, intOp func(int64, int64) int64) types.Object {
+func intOperatorFunc(env types.Environment, itArgs types.Iterator, intOperator func(int64, int64) int64) types.Object {
 	arg0, _ := itArgs.Next()
 	arg1, _ := itArgs.Next()
 	var res types.Object = types.None
 	a, ok := arg0.Eval(env).(types.Integer)
 	if ok {
-		b, ok := arg1.Eval(env).(types.Integer)
-		if ok {
-			if b != 0 {
-				res = types.Integer(intOp(int64(a), int64(b)))
-			}
+		b, _ := arg1.Eval(env).(types.Integer)
+		if b != 0 { // non integer and zero are treated the same way thanks to type assertion
+			res = types.Integer(intOperator(int64(a), int64(b)))
 		}
 	}
 	return res
+}
+
+func sumSetForm(env types.Environment, itArgs types.Iterator) types.Object {
+	return inplaceOperatorForm(env, itArgs, sumName)
+}
+
+func minusSetForm(env types.Environment, itArgs types.Iterator) types.Object {
+	return inplaceOperatorForm(env, itArgs, minusName)
+}
+
+func productSetForm(env types.Environment, itArgs types.Iterator) types.Object {
+	return inplaceOperatorForm(env, itArgs, productName)
+}
+
+func divideSetForm(env types.Environment, itArgs types.Iterator) types.Object {
+	return inplaceOperatorForm(env, itArgs, divideName)
+}
+
+func floorDivideSetForm(env types.Environment, itArgs types.Iterator) types.Object {
+	return inplaceOperatorForm(env, itArgs, floorDivideName)
+}
+
+func remainderSetForm(env types.Environment, itArgs types.Iterator) types.Object {
+	return inplaceOperatorForm(env, itArgs, remainderName)
+}
+
+func inplaceOperatorForm(env types.Environment, itArgs types.Iterator, opId types.Identifier) types.Object {
+	arg0, _ := itArgs.Next()
+	opInst := types.NewList(opId, arg0).AddAll(itArgs)
+	return types.NewList(types.Identifier(parser.SetName), arg0, opInst)
 }
