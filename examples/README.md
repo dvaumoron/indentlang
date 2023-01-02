@@ -7,3 +7,5 @@ testPage.html was generated with the command :
 testPage2.html was generated with the command :
 
     indentlang examples/testPage.il examples/testPage2.html testPage "" /login Login
+
+(the committed file have been cleaned)
