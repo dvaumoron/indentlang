@@ -145,12 +145,14 @@ func sendReset(words chan<- string, buildingWord []rune) []rune {
 func readUntil(buildingWord []rune, chars <-chan rune, delim rune) ([]rune, error) {
 	unended := true
 	buildingWord = append(buildingWord, delim)
+CharLoop:
 	for char := range chars {
 		buildingWord = append(buildingWord, char)
-		if char == delim {
+		switch char {
+		case delim:
 			unended = false
-			break
-		} else if char == '\\' {
+			break CharLoop
+		case '\\':
 			buildingWord = append(buildingWord, <-chars)
 		}
 	}

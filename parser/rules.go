@@ -36,26 +36,27 @@ var BuiltinsCopy types.Environment = types.MakeBaseEnvironment()
 // needed to prevent a cycle in the initialisation
 func init() {
 	wordParsers = []types.ConvertString{
-		parseTrue, parseFalse, parseNone, parseString, parseString2,
-		parseAttribute, parseList, parseInt, parseFloat,
+		parseTrue, parseFalse, parseNone, parseAttribute, parseList,
+		parseString, parseString2, parseInt, parseFloat,
 	}
 }
 
 func handleWord(words <-chan string, listStack *stack[*types.List], done chan<- types.NoneType) {
 	for word := range words {
-		if word == "(" {
+		switch word {
+		case "(":
 			manageOpen(listStack)
-		} else if word == ")" {
+		case ")":
 			listStack.pop()
-		} else {
+		default:
 			HandleClassicWord(word, listStack.peek())
 		}
 	}
 	done <- types.None
 }
 
-func HandleClassicWord(word string, list *types.List) {
-	if !nativeRules(word, list) {
+func HandleClassicWord(word string, nodeList *types.List) {
+	if !nativeRules(word, nodeList) {
 		args := types.NewList(types.String(word))
 		res := true
 		types.ForEach(CustomRules, func(object types.Object) bool {
@@ -65,24 +66,24 @@ func HandleClassicWord(word string, list *types.List) {
 				node := rule.Apply(BuiltinsCopy, args)
 				_, res = node.(types.NoneType)
 				if !res {
-					list.Add(node)
+					nodeList.Add(node)
 				}
 			}
 			return res
 		})
 		if res {
-			list.Add(types.Identifier(word))
+			nodeList.Add(types.Identifier(word))
 		}
 	}
 }
 
-func nativeRules(word string, list *types.List) bool {
+func nativeRules(word string, nodeList *types.List) bool {
 	ok := false
 	for _, parser := range wordParsers {
 		var node types.Object
 		node, ok = parser(word)
 		if ok {
-			list.Add(node)
+			nodeList.Add(node)
 			break
 		}
 	}
@@ -103,7 +104,7 @@ func parseNone(word string) (types.Object, bool) {
 
 func parseString(word string) (types.Object, bool) {
 	var res types.Object
-	ok := word[0] == '"'
+	ok := word[0] == '"' && word[len(word)-1] == '"'
 	if ok {
 		extracted := strings.ReplaceAll(word[1:len(word)-1], "\\'", "'")
 		res = types.String(extracted)
@@ -113,7 +114,7 @@ func parseString(word string) (types.Object, bool) {
 
 func parseString2(word string) (types.Object, bool) {
 	var res types.Object
-	ok := word[0] == '\''
+	ok := word[0] == '\'' && word[len(word)-1] == '\''
 	if ok {
 		skipApos := false
 		size := len(word)
@@ -143,7 +144,7 @@ func parseAttribute(word string) (types.Object, bool) {
 	var res types.Object
 	ok := word[0] == '@'
 	if ok {
-		elems := strings.Split(word[1:], "=")
+		elems := strings.SplitN(word[1:], "=", 2)
 		attr := types.NewList(types.String(elems[0]))
 		attr.AddCategory(AttributeName)
 		if len(elems) > 1 {
@@ -154,22 +155,58 @@ func parseAttribute(word string) (types.Object, bool) {
 	return res, ok
 }
 
-// TODO improve melting with string literal
+// manage melting with string literal
 func parseList(word string) (types.Object, bool) {
 	var res types.Object = types.None
-	ok := word != SetName && strings.Contains(word, ":")
+	ok := word != SetName
 	if ok {
-		nodeList := types.NewList(ListId)
-		for _, elem := range strings.Split(word, ":") {
-			if elem == "" {
-				nodeList.Add(types.None)
-			} else {
-				HandleClassicWord(elem, nodeList)
+		chars := make(chan rune)
+		go sendChar(chars, word)
+		index := 0
+		var indexes []int
+		for char := range chars {
+			switch char {
+			case '"', '\'':
+				delim := char
+			InnerCharLoop:
+				for char := range chars {
+					index++
+					switch char {
+					case delim:
+						// no need of unended string detection,
+						// this have already been tested in the word splitting part
+						break InnerCharLoop
+					case '\\':
+						<-chars
+						index++
+					}
+				}
+			case ':':
+				indexes = append(indexes, index)
 			}
+			index++
 		}
-		res = nodeList
+		ok = len(indexes) != 0
+		if ok {
+			nodeList := types.NewList(ListId)
+			startIndex := 0
+			for _, splitIndex := range indexes {
+				handleSubWord(word[startIndex:splitIndex], nodeList)
+				startIndex = splitIndex + 1
+			}
+			handleSubWord(word[startIndex:], nodeList)
+			res = nodeList
+		}
 	}
 	return res, ok
+}
+
+func handleSubWord(word string, nodeList *types.List) {
+	if word == "" {
+		nodeList.Add(types.None)
+	} else {
+		HandleClassicWord(word, nodeList)
+	}
 }
 
 func parseInt(word string) (types.Object, bool) {

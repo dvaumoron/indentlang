@@ -209,7 +209,7 @@ func initBuitins() types.BaseEnvironment {
 	base.StoreStr("ParseWord", types.MakeNativeAppliable(parseWordFunc))
 
 	// TODO init stuff
-	// lack of string utilities
+	// lack of utilities (for string, iterator, function, ...)
 
 	// give parser package a protected copy to use in user custom rules
 	parser.BuiltinsCopy = types.NewLocalEnvironment(base)

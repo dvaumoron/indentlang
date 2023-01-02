@@ -40,16 +40,17 @@ func forForm(env types.Environment, itArgs types.Iterator) types.Object {
 	it, ok := arg1.Eval(env).(types.Iterable)
 	if ok {
 		bloc := types.NewList().AddAll(itArgs)
-		switch casted := arg0.(type) {
-		case types.Identifier:
-			id := string(casted)
-			types.ForEach(it, func(value types.Object) bool {
-				env.StoreStr(id, value)
-				evalBloc(bloc, res, env)
-				return true
-			})
-		case *types.List:
-			if casted.Size() != 0 {
+		if bloc.Size() != 0 {
+			switch casted := arg0.(type) {
+			case types.Identifier:
+
+				id := string(casted)
+				types.ForEach(it, func(value types.Object) bool {
+					env.StoreStr(id, value)
+					evalBloc(bloc, res, env)
+					return true
+				})
+			case *types.List:
 				ids := extractIds(casted)
 				types.ForEach(it, func(value types.Object) bool {
 					it2, ok := value.(types.Iterable)
