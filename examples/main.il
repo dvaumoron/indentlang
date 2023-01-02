@@ -3,7 +3,7 @@ html
         meta @charset="utf-8"
         title "Title - " value1
         link @rel="stylesheet" @type="text/css" @href="/static/main.css"
-        script @type="text/javascript" @src="/static/main.js"
+        script @type="text/javascript" @src="/static/main.js" ""
         WidgetHeader
     body
         header

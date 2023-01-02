@@ -1,6 +1,6 @@
 Import "main.il"
 
-:= WidgetHeader (script @type="text/javascript" @src="/static/test.js")
+:= WidgetHeader (script @type="text/javascript" @src="/static/test.js" "")
 
 Func WidgetBody (n)
     Return
