@@ -25,6 +25,7 @@ import (
 )
 
 const SetName = ":="
+const UnquoteName = "Unquote"
 
 var CustomRules = types.NewList()
 
@@ -36,23 +37,9 @@ var BuiltinsCopy types.Environment = types.MakeBaseEnvironment()
 // needed to prevent a cycle in the initialisation
 func init() {
 	wordParsers = []types.ConvertString{
-		parseTrue, parseFalse, parseNone, parseAttribute, parseList,
-		parseString, parseString2, parseInt, parseFloat,
+		parseTrue, parseFalse, parseNone, parseAttribute, parseUnquote,
+		parseList, parseString, parseString2, parseInt, parseFloat,
 	}
-}
-
-func handleWord(words <-chan string, listStack *stack[*types.List], done chan<- types.NoneType) {
-	for word := range words {
-		switch word {
-		case "(":
-			manageOpen(listStack)
-		case ")":
-			listStack.pop()
-		default:
-			HandleClassicWord(word, listStack.peek())
-		}
-	}
-	done <- types.None
 }
 
 func HandleClassicWord(word string, nodeList *types.List) {
@@ -157,7 +144,7 @@ func parseAttribute(word string) (types.Object, bool) {
 
 // manage melting with string literal
 func parseList(word string) (types.Object, bool) {
-	var res types.Object = types.None
+	var res types.Object
 	ok := word != SetName
 	if ok {
 		chars := make(chan rune)
@@ -217,4 +204,15 @@ func parseInt(word string) (types.Object, bool) {
 func parseFloat(word string) (types.Object, bool) {
 	f, err := strconv.ParseFloat(word, 64)
 	return types.Float(f), err == nil
+}
+
+func parseUnquote(word string) (types.Object, bool) {
+	var res types.Object
+	ok := word[0] == ','
+	if ok {
+		nodeList := types.NewList(types.Identifier(UnquoteName))
+		handleSubWord(word[1:], nodeList)
+		res = nodeList
+	}
+	return res, ok
 }

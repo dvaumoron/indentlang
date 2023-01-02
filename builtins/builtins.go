@@ -168,7 +168,7 @@ func initBuitins() types.BaseEnvironment {
 	base.StoreStr("Integer", types.MakeNativeAppliable(intConvFunc))
 	base.StoreStr("Float", types.MakeNativeAppliable(floatConvFunc))
 	base.StoreStr("String", types.MakeNativeAppliable(stringConvFunc))
-	base.StoreStr(parser.ListName, types.MakeNativeAppliable(listFunc))
+	base.StoreStr(string(parser.ListId), types.MakeNativeAppliable(listFunc))
 	base.StoreStr("Dict", types.MakeNativeAppliable(dictFunc))
 
 	// logic
@@ -207,7 +207,7 @@ func initBuitins() types.BaseEnvironment {
 
 	// advanced programming
 	base.StoreStr("Quote", types.MakeNativeAppliable(quoteForm))
-	base.StoreStr(unquoteName, types.MakeNativeAppliable(unquoteFunc)) // not very useful
+	base.StoreStr(parser.UnquoteName, types.MakeNativeAppliable(unquoteFunc)) // not very useful
 	base.StoreStr("Del", types.MakeNativeAppliable(delForm))
 	base.StoreStr("AddCategory", types.MakeNativeAppliable(addCategoryFunc))
 	base.StoreStr("HasCategory", types.MakeNativeAppliable(hasCategoryFunc))

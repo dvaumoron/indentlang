@@ -25,8 +25,7 @@ import (
 )
 
 const AttributeName = "attribute"
-const ListName = "List"
-const ListId types.Identifier = ListName
+const ListId types.Identifier = "List"
 
 type stack[T any] struct {
 	inner []T
@@ -124,6 +123,20 @@ func manageOpen(listStack *stack[*types.List]) {
 	current := types.NewList()
 	listStack.peek().Add(current)
 	listStack.push(current)
+}
+
+func handleWord(words <-chan string, listStack *stack[*types.List], done chan<- types.NoneType) {
+	for word := range words {
+		switch word {
+		case "(":
+			manageOpen(listStack)
+		case ")":
+			listStack.pop()
+		default:
+			HandleClassicWord(word, listStack.peek())
+		}
+	}
+	done <- types.None
 }
 
 func sendChar(chars chan<- rune, line string) {

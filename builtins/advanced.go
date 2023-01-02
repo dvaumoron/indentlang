@@ -22,8 +22,6 @@ import (
 	"github.com/dvaumoron/indentlang/types"
 )
 
-const unquoteName = "Unquote"
-
 type quoteIterator struct {
 	types.NoneType
 	inner types.Iterator
@@ -45,9 +43,8 @@ func evalUnquote(object types.Object, env types.Environment) types.Object {
 	if ok && list.Size() != 0 {
 		resList := types.NewList()
 		value := list.LoadInt(0)
-		var id types.Identifier
-		id, ok = value.(types.Identifier)
-		if ok && id == unquoteName {
+		id, _ := value.(types.Identifier)
+		if id == parser.UnquoteName { // non indentifier are ""
 			res = list.LoadInt(1).Eval(env)
 		} else {
 			resList.Add(evalUnquote(value, env))
