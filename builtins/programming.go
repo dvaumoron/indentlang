@@ -43,7 +43,6 @@ func forForm(env types.Environment, itArgs types.Iterator) types.Object {
 		if bloc.Size() != 0 {
 			switch casted := arg0.(type) {
 			case types.Identifier:
-
 				id := string(casted)
 				types.ForEach(it, func(value types.Object) bool {
 					env.StoreStr(id, value)

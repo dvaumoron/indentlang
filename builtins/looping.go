@@ -83,11 +83,11 @@ func (e *enumerateIterator) Next() (types.Object, bool) {
 }
 
 func enumerateFunc(env types.Environment, itArgs types.Iterator) types.Object {
-	arg0, _ := itArgs.Next()
-	it, ok := arg0.Eval(env).(types.Iterable)
+	arg, _ := itArgs.Next()
+	it, ok := arg.Eval(env).(types.Iterable)
 	var res types.Object = types.None
 	if ok {
-		res = &enumerateIterator{inner: it.Iter(), count: 1}
+		res = &enumerateIterator{inner: it.Iter()}
 	}
 	return res
 }

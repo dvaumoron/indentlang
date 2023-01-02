@@ -198,7 +198,7 @@ func remainderSetForm(env types.Environment, itArgs types.Iterator) types.Object
 }
 
 func inplaceOperatorForm(env types.Environment, itArgs types.Iterator, opId types.Identifier) types.Object {
-	arg0, _ := itArgs.Next()
-	opCall := types.NewList(opId, arg0).AddAll(itArgs)
-	return types.NewList(types.Identifier(parser.SetName), arg0, opCall).Eval(env)
+	arg, _ := itArgs.Next()
+	opCall := types.NewList(opId, arg).AddAll(itArgs)
+	return types.NewList(types.Identifier(parser.SetName), arg, opCall).Eval(env)
 }
