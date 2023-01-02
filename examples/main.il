@@ -12,7 +12,7 @@ html
                 If value2 ("Welcome&nbsp;" value2 "&nbsp;")
                 a @href=value3 value4
         main
-            WidgetBody
+            WidgetBody 5
         footer
             For arg values
                 p arg

@@ -31,11 +31,10 @@ func (r *rangeIterator) Iter() types.Iterator {
 }
 
 func (r *rangeIterator) Next() (types.Object, bool) {
-	var res types.Object = types.None
+	var res types.Object = types.Integer(r.current)
 	ok := r.current < r.end
 	if ok {
 		r.current += r.step
-		res = types.Integer(r.current)
 	}
 	return res, ok
 }
@@ -78,8 +77,9 @@ func (e *enumerateIterator) Iter() types.Iterator {
 
 func (e *enumerateIterator) Next() (types.Object, bool) {
 	value, ok := e.inner.Next()
+	count := e.count
 	e.count++
-	return types.NewList(types.Integer(e.count), value), ok
+	return types.NewList(types.Integer(count), value), ok
 }
 
 func enumerateFunc(env types.Environment, itArgs types.Iterator) types.Object {
