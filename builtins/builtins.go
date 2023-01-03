@@ -208,6 +208,7 @@ func initBuitins() types.BaseEnvironment {
 	// advanced programming
 	base.StoreStr("Quote", types.MakeNativeAppliable(quoteForm))
 	base.StoreStr(parser.UnquoteName, types.MakeNativeAppliable(unquoteFunc)) // not very useful
+	base.StoreStr("Eval", types.MakeNativeAppliable(evalForm))
 	base.StoreStr("Del", types.MakeNativeAppliable(delForm))
 	base.StoreStr("AddCategory", types.MakeNativeAppliable(addCategoryFunc))
 	base.StoreStr("HasCategory", types.MakeNativeAppliable(hasCategoryFunc))

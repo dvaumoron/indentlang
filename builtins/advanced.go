@@ -41,14 +41,17 @@ func evalUnquote(object types.Object, env types.Environment) types.Object {
 	list, ok := object.(*types.List)
 	res := object
 	if ok && list.Size() != 0 {
-		resList := types.NewList()
-		value := list.LoadInt(0)
+		it := list.Iter()
+		value, _ := it.Next()
 		id, _ := value.(types.Identifier)
 		if id == parser.UnquoteName { // non indentifier are ""
-			res = list.LoadInt(1).Eval(env)
+			arg, _ := it.Next()
+			res = arg.Eval(env)
 		} else {
+			resList := types.NewList()
+			resList.ImportCategories(list)
 			resList.Add(evalUnquote(value, env))
-			resList.AddAll(newQuoteIterator(list.Iter(), env))
+			resList.AddAll(newQuoteIterator(it, env))
 			res = resList
 		}
 	}
@@ -68,6 +71,14 @@ func quoteForm(env types.Environment, itArgs types.Iterator) types.Object {
 func unquoteFunc(env types.Environment, itArgs types.Iterator) types.Object {
 	arg, _ := itArgs.Next()
 	return arg.Eval(env)
+}
+
+// allow lazy execution after Import with Quote
+func evalForm(env types.Environment, itArgs types.Iterator) types.Object {
+	arg, _ := itArgs.Next()
+	// the first Eval get the code (from Identifier in general),
+	// the second do the real work
+	return arg.Eval(env).Eval(env)
 }
 
 func delForm(env types.Environment, itArgs types.Iterator) types.Object {

@@ -2,10 +2,10 @@
 
 testPage.html was generated with the command :
 
-    indentlang examples/testPage.il examples/testPage.html testPage Me /logout Logout
+    indentlang testPage.il testPage.html testPage Me /logout Logout 5
 
 testPage2.html was generated with the command :
 
-    indentlang examples/testPage.il examples/testPage2.html testPage "" /login Login
+    indentlang testPage.il testPage2.html testPage "" /login Login 5
 
 (the committed file have been cleaned)

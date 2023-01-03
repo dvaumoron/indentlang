@@ -41,6 +41,12 @@ func (l *List) CopyCategories() map[string]NoneType {
 	return copy
 }
 
+func (l *List) ImportCategories(other *List) {
+	for category := range other.categories {
+		l.categories[category] = None
+	}
+}
+
 func (l *List) Add(value Object) {
 	l.inner = append(l.inner, value)
 }
