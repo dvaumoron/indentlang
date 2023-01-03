@@ -28,12 +28,23 @@ import (
 )
 
 type Template struct {
-	env  types.Environment
-	main types.Appliable
+	env types.Environment
 }
 
 func (t *Template) Execute(w io.Writer, data any) error {
-	_, err := t.main.ApplyWithData(data, t.env, types.NewList()).WriteTo(w)
+	var err error
+	main, ok := t.env.LoadStr(builtins.MainName)
+	if ok {
+		var mainAppliable types.Appliable
+		mainAppliable, ok = main.(types.Appliable)
+		if ok {
+			_, err = mainAppliable.ApplyWithData(data, t.env, types.NewList()).WriteTo(w)
+		} else {
+			err = errors.New("the object Main is not an Appliable")
+		}
+	} else {
+		err = errors.New("cannot load object Main")
+	}
 	return err
 }
 
@@ -54,19 +65,5 @@ func ParseWithImport(importDirective types.Appliable, filePath string) (*Templat
 
 	importDirective.Apply(env, types.NewList(types.String(filePath)))
 
-	var tmpl *Template
-	var err error
-	main, ok := env.LoadStr(builtins.MainName)
-	if ok {
-		var mainAppliable types.Appliable
-		mainAppliable, ok = main.(types.Appliable)
-		if ok {
-			tmpl = &Template{env: env, main: mainAppliable}
-		} else {
-			err = errors.New("the object Main is not an Appliable")
-		}
-	} else {
-		err = errors.New("cannot load object Main")
-	}
-	return tmpl, err
+	return &Template{env: env}, nil
 }
