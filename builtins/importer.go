@@ -51,6 +51,7 @@ func init() {
 type moduleCacheValue struct {
 	env      types.Environment
 	waitings []chan<- types.Environment
+	loaded   bool
 }
 
 // don't need mutex (only one coroutine access it)
@@ -63,28 +64,29 @@ func importer(requestReceiver <-chan importRequest, responseReceiver <-chan impo
 			basePath := request.basePath
 			totalPath := basePath + request.filePath
 			value := moduleCache[totalPath]
-			if env := value.env; env == nil {
+			if value.loaded {
+				responder := request.responder
+				request.responder <- value.env
+				close(responder)
+			} else {
 				waitings := value.waitings
 				if len(waitings) == 0 {
-					// import non existing
+					// nobody waiting, trying import
 					go innerImporter(basePath, totalPath)
 				}
 				value.waitings = append(waitings, request.responder)
 				moduleCache[totalPath] = value
-			} else {
-				responder := request.responder
-				request.responder <- env
-				close(responder)
 			}
 		case response := <-responseReceiver:
 			path := response.path
 			env := response.env
+			// send the imported to all waitings
 			for _, responder := range moduleCache[path].waitings {
 				responder <- env
 				close(responder)
 			}
 			// save the computed env & reset the list of waiting
-			moduleCache[path] = moduleCacheValue{env: env}
+			moduleCache[path] = moduleCacheValue{env: env, loaded: true}
 		}
 	}
 }

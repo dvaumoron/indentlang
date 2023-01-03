@@ -56,14 +56,14 @@ func ParsePath(path string) (*Template, error) {
 
 	splitIndex := strings.LastIndex(path, "/") + 1
 	basePath, fileName := path[:splitIndex], path[splitIndex:]
-	return ParseWithImport(builtins.MakeImportDirective(basePath), fileName)
+	return ParseWithImport(builtins.MakeImportDirective(basePath), fileName), nil
 }
 
-func ParseWithImport(importDirective types.Appliable, filePath string) (*Template, error) {
+func ParseWithImport(importDirective types.Appliable, filePath string) *Template {
 	env := types.NewLocalEnvironment(builtins.Builtins)
 	env.StoreStr(builtins.ImportName, importDirective)
 
 	importDirective.Apply(env, types.NewList(types.String(filePath)))
 
-	return &Template{env: env}, nil
+	return &Template{env: env}
 }

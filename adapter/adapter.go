@@ -76,13 +76,8 @@ func LoadTemplates(templatesPath string) IndentlangHTMLRender {
 	inSize := len(templatesPath)
 	err = filepath.WalkDir(templatesPath, func(path string, d fs.DirEntry, err error) error {
 		if err == nil && !d.IsDir() {
-			name := path[inSize:]
-			if name[len(name)-3:] == ".il" {
-				var tmpl *template.Template
-				tmpl, err = template.ParseWithImport(importDirective, path)
-				if err == nil {
-					templates[name] = tmpl
-				}
+			if name := path[inSize:]; name[len(name)-3:] == ".il" {
+				templates[name] = template.ParseWithImport(importDirective, path)
 			}
 		}
 		return err
