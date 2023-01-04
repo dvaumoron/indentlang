@@ -38,7 +38,9 @@ func (t *Template) Execute(w io.Writer, data any) error {
 		var mainAppliable types.Appliable
 		mainAppliable, ok = main.(types.Appliable)
 		if ok {
-			_, err = mainAppliable.ApplyWithData(data, t.env, types.NewList()).WriteTo(w)
+			// each call must have its environment to avoid conflict in parallele execution
+			local := types.NewLocalEnvironment(t.env)
+			_, err = mainAppliable.ApplyWithData(data, local, types.NewList()).WriteTo(w)
 		} else {
 			err = errors.New("the object Main is not an Appliable")
 		}
