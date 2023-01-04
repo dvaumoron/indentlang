@@ -68,7 +68,7 @@ var functionKind = &noArgsKind{
 		case 0:
 			res = types.None
 		case 1:
-			res = evaluated.Load(types.Integer(0))
+			res = evaluated.LoadInt(0)
 		default:
 			res = evaluated
 		}
