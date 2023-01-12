@@ -187,6 +187,7 @@ func initBuitins() types.BaseEnvironment {
 	base.StoreStr("Enumerate", types.MakeNativeAppliable(enumerateFunc))
 	base.StoreStr("Iter", types.MakeNativeAppliable(iterFunc))
 	base.StoreStr("Next", types.MakeNativeAppliable(nextFunc))
+	base.StoreStr("Close", types.MakeNativeAppliable(closeFunc))
 	base.StoreStr("Size", types.MakeNativeAppliable(sizeFunc))
 	base.StoreStr("Add", types.MakeNativeAppliable(addFunc))
 	base.StoreStr("AddAll", types.MakeNativeAppliable(addAllFunc))

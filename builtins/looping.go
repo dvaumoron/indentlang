@@ -120,6 +120,15 @@ func nextFunc(env types.Environment, itArgs types.Iterator) types.Object {
 	return types.NewList(res0, types.Boolean(res1))
 }
 
+func closeFunc(env types.Environment, itArgs types.Iterator) types.Object {
+	arg0, _ := itArgs.Next()
+	it, ok := arg0.Eval(env).(types.Iterator)
+	if ok {
+		it.Close()
+	}
+	return types.None
+}
+
 func sizeFunc(env types.Environment, itArgs types.Iterator) types.Object {
 	arg0, _ := itArgs.Next()
 	it, ok := arg0.Eval(env).(types.Sizable)
