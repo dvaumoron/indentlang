@@ -55,6 +55,7 @@ func (l *List) Add(value Object) {
 func ForEach(it Iterable, action func(Object) bool) {
 	ok := true
 	it2 := it.Iter()
+	defer it2.Close()
 	for ok {
 		var value Object
 		value, ok = it2.Next()
@@ -138,7 +139,8 @@ func (l *List) Size() int {
 
 type chanIterator struct {
 	NoneType
-	receiver <-chan Object
+	receiver    <-chan Object
+	closeSender chan<- NoneType
 }
 
 func (it *chanIterator) Iter() Iterator {
@@ -153,15 +155,30 @@ func (it *chanIterator) Next() (Object, bool) {
 	return value, ok
 }
 
-func (l *List) Iter() Iterator {
-	channel := make(chan Object)
-	go sendSliceValue(l.inner, channel)
-	return &chanIterator{receiver: channel}
+func (it *chanIterator) Close() {
+	select {
+	case it.closeSender <- None:
+		close(it.closeSender)
+		it.closeSender = nil
+	default:
+	}
 }
 
-func sendSliceValue(objects []Object, transmitter chan<- Object) {
+func (l *List) Iter() Iterator {
+	objectChannel := make(chan Object)
+	closeChannel := make(chan NoneType)
+	go sendSliceValue(l.inner, objectChannel, closeChannel)
+	return &chanIterator{receiver: objectChannel, closeSender: closeChannel}
+}
+
+func sendSliceValue(objects []Object, transmitter chan<- Object, shouldClose <-chan NoneType) {
+ForLoop:
 	for _, value := range objects {
-		transmitter <- value
+		select {
+		case transmitter <- value:
+		case <-shouldClose:
+			break ForLoop
+		}
 	}
 	close(transmitter)
 }
@@ -181,6 +198,7 @@ func (l *List) WriteTo(w io.Writer) (int64, error) {
 
 func (l *List) Eval(env Environment) Object {
 	it := l.Iter()
+	defer it.Close()
 	res, ok := it.Next()
 	if ok {
 		value0 := res.Eval(env)

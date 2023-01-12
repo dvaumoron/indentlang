@@ -39,6 +39,9 @@ func (r *rangeIterator) Next() (types.Object, bool) {
 	return res, ok
 }
 
+func (r *rangeIterator) Close() {
+}
+
 func rangeFunc(env types.Environment, itArgs types.Iterator) types.Object {
 	var start int64
 	var end int64
@@ -80,6 +83,10 @@ func (e *enumerateIterator) Next() (types.Object, bool) {
 	count := e.count
 	e.count++
 	return types.NewList(types.Integer(count), value), ok
+}
+
+func (e *enumerateIterator) Close() {
+	e.inner.Close()
 }
 
 func enumerateFunc(env types.Environment, itArgs types.Iterator) types.Object {
@@ -136,6 +143,10 @@ func (e *evalIterator) Iter() types.Iterator {
 func (e *evalIterator) Next() (types.Object, bool) {
 	value, ok := e.inner.Next()
 	return value.Eval(e.env), ok
+}
+
+func (e *evalIterator) Close() {
+	e.inner.Close()
 }
 
 func newEvalIterator(it types.Iterator, env types.Environment) *evalIterator {

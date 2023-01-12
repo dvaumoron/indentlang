@@ -54,7 +54,9 @@ func forForm(env types.Environment, itArgs types.Iterator) types.Object {
 				types.ForEach(it, func(value types.Object) bool {
 					it2, ok := value.(types.Iterable)
 					if ok {
-						storeArgsInIds(ids, it2.Iter(), env)
+						it3 := it2.Iter()
+						defer it3.Close()
+						storeArgsInIds(ids, it3, env)
 						evalBloc(bloc, res, env)
 					}
 					return ok
@@ -118,6 +120,7 @@ func setForm(env types.Environment, itArgs types.Iterator) types.Object {
 			it, ok := arg1.Eval(env).(types.Iterable)
 			if ok {
 				it2 := it.Iter()
+				defer it2.Close()
 				types.ForEach(casted, func(value types.Object) bool {
 					id, ok := value.(types.Identifier)
 					if ok {
@@ -174,6 +177,7 @@ func storeFunc(env types.Environment, itArgs types.Iterator) types.Object {
 	evaluated := types.NewList().AddAll(newEvalIterator(itArgs, env))
 	if size := evaluated.Size() - 2; size > 0 {
 		it := evaluated.Iter()
+		defer it.Close()
 		arg, _ := it.Next()
 		ok := true
 		for i := 1; i < size; i++ {

@@ -135,7 +135,9 @@ type userAppliable struct {
 
 func (u *userAppliable) Apply(callEnv types.Environment, args types.Iterable) (res types.Object) {
 	local := u.initEnv(u.creationEnv)
-	u.retrieveArgs(callEnv, local, args.Iter())
+	itArgs := args.Iter()
+	defer itArgs.Close()
+	u.retrieveArgs(callEnv, local, itArgs)
 	defer func() {
 		if r := recover(); r != nil {
 			_, ok := r.(returnMarker)
@@ -154,7 +156,9 @@ func (u *userAppliable) ApplyWithData(data any, callEnv types.Environment, args 
 	local := u.initEnv(types.NewMergeEnvironment(
 		types.NewDataEnvironment(data, u.creationEnv), callEnv,
 	))
-	u.retrieveArgs(callEnv, local, args.Iter())
+	itArgs := args.Iter()
+	defer itArgs.Close()
+	u.retrieveArgs(callEnv, local, itArgs)
 	defer func() {
 		if r := recover(); r != nil {
 			_, ok := r.(returnMarker)
@@ -245,7 +249,9 @@ func callFunc(env types.Environment, itArgs types.Iterator) types.Object {
 	if ok {
 		switch casted := arg0.(type) {
 		case *userAppliable:
-			res = casted.defaultApply(env, it.Iter())
+			it2 := it.Iter()
+			defer it2.Close()
+			res = casted.defaultApply(env, it2)
 		case types.Appliable:
 			res = casted.Apply(env, it)
 		}

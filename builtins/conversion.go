@@ -129,6 +129,7 @@ func extractString(o types.Object) string {
 		res = string(casted)
 	case types.Iterable:
 		it := casted.Iter()
+		defer it.Close()
 		var builder strings.Builder
 		builder.WriteRune('(')
 		first, ok := it.Next()
@@ -156,6 +157,7 @@ func dictFunc(env types.Environment, itArgs types.Iterator) types.Object {
 		it, ok := arg.Eval(env).(types.Iterable)
 		if ok {
 			it2 := it.Iter()
+			defer it2.Close()
 			var key types.Object
 			key, ok = it2.Next()
 			if ok {

@@ -53,6 +53,7 @@ type Sizable interface {
 type Iterator interface {
 	Iterable
 	Next() (Object, bool)
+	Close()
 }
 
 type Iterable interface {

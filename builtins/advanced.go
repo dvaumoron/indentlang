@@ -37,11 +37,16 @@ func (q *quoteIterator) Next() (types.Object, bool) {
 	return evalUnquote(value, q.env), ok
 }
 
+func (q *quoteIterator) Close() {
+	q.inner.Close()
+}
+
 func evalUnquote(object types.Object, env types.Environment) types.Object {
 	list, ok := object.(*types.List)
 	res := object
 	if ok && list.Size() != 0 {
 		it := list.Iter()
+		defer it.Close()
 		value, _ := it.Next()
 		id, _ := value.(types.Identifier)
 		if id == parser.UnquoteName { // non indentifier are ""

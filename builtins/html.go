@@ -60,6 +60,7 @@ func CreateHtmlElement(name string) types.NativeAppliable {
 			attr, ok := value.(types.Iterable)
 			if ok {
 				itAttr := attr.Iter()
+				defer itAttr.Close()
 				attrName, ok := itAttr.Next()
 				if ok {
 					res.Add(space)

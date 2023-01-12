@@ -78,14 +78,20 @@ func (b BaseEnvironment) Size() int {
 }
 
 func (b BaseEnvironment) Iter() Iterator {
-	channel := make(chan Object)
-	go sendMapValue(b.objects, channel)
-	return &chanIterator{receiver: channel}
+	objectChannel := make(chan Object)
+	closeChannel := make(chan NoneType)
+	go sendMapValue(b.objects, objectChannel, closeChannel)
+	return &chanIterator{receiver: objectChannel, closeSender: closeChannel}
 }
 
-func sendMapValue(objects map[string]Object, transmitter chan<- Object) {
+func sendMapValue(objects map[string]Object, transmitter chan<- Object, shouldClose <-chan NoneType) {
+ForLoop:
 	for key, value := range objects {
-		transmitter <- NewList(String(key), value)
+		select {
+		case transmitter <- NewList(String(key), value):
+		case <-shouldClose:
+			break ForLoop
+		}
 	}
 	close(transmitter)
 }
