@@ -1,6 +1,6 @@
-# indentlang
+# IndentLang
 
-A templating language mainly  to output balised language (html, xml, etc.). 
+A templating language mainly to output balised language (html, xml, etc.). 
 
 See [examples](examples)
 
