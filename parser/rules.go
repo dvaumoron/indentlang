@@ -43,7 +43,7 @@ func init() {
 }
 
 func HandleClassicWord(word string, nodeList *types.List) {
-	if !nativeRules(word, nodeList) {
+	if nativeRules(word, nodeList) {
 		args := types.NewList(types.String(word))
 		res := true
 		types.ForEach(CustomRules, func(object types.Object) bool {
@@ -64,17 +64,16 @@ func HandleClassicWord(word string, nodeList *types.List) {
 	}
 }
 
+// a true is returned when no rule match
 func nativeRules(word string, nodeList *types.List) bool {
-	ok := false
 	for _, parser := range wordParsers {
-		var node types.Object
-		node, ok = parser(word)
+		node, ok := parser(word)
 		if ok {
 			nodeList.Add(node)
-			break
+			return false
 		}
 	}
-	return ok
+	return true
 }
 
 func parseTrue(word string) (types.Object, bool) {
@@ -90,102 +89,120 @@ func parseNone(word string) (types.Object, bool) {
 }
 
 func parseString(word string) (types.Object, bool) {
-	var res types.Object
-	ok := word[0] == '"' && word[len(word)-1] == '"'
-	if ok {
-		extracted := strings.ReplaceAll(word[1:len(word)-1], "\\'", "'")
-		res = types.String(extracted)
+	lastIndex := len(word) - 1
+	if word[0] != '"' || word[lastIndex] != '"' {
+		return nil, false
 	}
-	return res, ok
-}
-
-func parseString2(word string) (types.Object, bool) {
-	var res types.Object
-	ok := word[0] == '\'' && word[len(word)-1] == '\''
-	if ok {
-		skipApos := false
-		size := len(word)
-		extracted := make([]rune, 0, size)
-		for _, char := range word[1 : size-1] {
-			if skipApos {
-				skipApos = false
-				if char == '\'' {
-					extracted = append(extracted, char)
-				} else {
-					extracted = append(extracted, '\\', char)
-				}
-			} else if char == '"' {
-				extracted = append(extracted, '\\', char)
-			} else if char == '\\' {
-				skipApos = true
+	escape := false
+	extracted := make([]rune, 0, lastIndex)
+	for _, char := range word[1:lastIndex] {
+		if escape {
+			escape = false
+			if char == '\'' {
+				extracted = append(extracted, '\'')
 			} else {
+				extracted = append(extracted, '\\', char)
+			}
+		} else {
+			switch char {
+			case '"':
+				return nil, false
+			case '\\':
+				escape = true
+			default:
 				extracted = append(extracted, char)
 			}
 		}
-		res = types.String(extracted)
 	}
-	return res, ok
+	return types.String(extracted), true
+}
+
+func parseString2(word string) (types.Object, bool) {
+	lastIndex := len(word) - 1
+	if word[0] != '\'' || word[lastIndex] != '\'' {
+		return nil, false
+	}
+	escape := false
+	extracted := make([]rune, 0, lastIndex)
+	for _, char := range word[1:lastIndex] {
+		if escape {
+			escape = false
+			if char == '\'' {
+				extracted = append(extracted, '\'')
+			} else {
+				extracted = append(extracted, '\\', char)
+			}
+		} else {
+			switch char {
+			case '"':
+				extracted = append(extracted, '\\', '"')
+			case '\'':
+				return nil, false
+			case '\\':
+				escape = true
+			default:
+				extracted = append(extracted, char)
+			}
+		}
+	}
+	return types.String(extracted), true
 }
 
 func parseAttribute(word string) (types.Object, bool) {
-	var res types.Object
-	ok := word[0] == '@'
-	if ok {
-		elems := strings.SplitN(word[1:], "=", 2)
-		attr := types.NewList(types.String(elems[0]))
-		attr.AddCategory(AttributeName)
-		if len(elems) > 1 {
-			HandleClassicWord(elems[1], attr)
-		}
-		res = attr
+	if word[0] != '@' {
+		return nil, false
 	}
-	return res, ok
+	elems := strings.SplitN(word[1:], "=", 2)
+	attr := types.NewList(types.String(elems[0]))
+	attr.AddCategory(AttributeName)
+	if len(elems) > 1 {
+		HandleClassicWord(elems[1], attr)
+	}
+	return attr, true
 }
 
 // manage melting with string literal
 func parseList(word string) (types.Object, bool) {
-	var res types.Object
-	ok := word != SetName
-	if ok {
-		chars := make(chan rune)
-		go sendChar(chars, word)
-		index := 0
-		var indexes []int
-		for char := range chars {
-			switch char {
-			case '"', '\'':
-				delim := char
-			InnerCharLoop:
-				for char := range chars {
-					index++
-					switch char {
-					case delim:
-						// no need of unended string detection,
-						// this have already been tested in the word splitting part
-						break InnerCharLoop
-					case '\\':
-						<-chars
-						index++
-					}
-				}
-			case ':':
-				indexes = append(indexes, index)
-			}
-			index++
-		}
-		ok = len(indexes) != 0
-		if ok {
-			nodeList := types.NewList(ListId)
-			startIndex := 0
-			for _, splitIndex := range indexes {
-				handleSubWord(word[startIndex:splitIndex], nodeList)
-				startIndex = splitIndex + 1
-			}
-			handleSubWord(word[startIndex:], nodeList)
-			res = nodeList
-		}
+	if word == SetName {
+		return nil, false
 	}
-	return res, ok
+	chars := make(chan rune)
+	go sendChar(chars, word)
+	index := 0
+	var indexes []int
+	for char := range chars {
+		switch char {
+		case '"', '\'':
+			delim := char
+		InnerCharLoop:
+			for char := range chars {
+				index++
+				switch char {
+				case delim:
+					// no need of unended string detection,
+					// this have already been tested in the word splitting part
+					break InnerCharLoop
+				case '\\':
+					<-chars
+					index++
+				}
+			}
+		case ':':
+			indexes = append(indexes, index)
+		}
+		index++
+	}
+	if len(indexes) == 0 {
+		return nil, false
+	}
+	nodeList := types.NewList(ListId)
+	startIndex := 0
+	for _, splitIndex := range indexes {
+		handleSubWord(word[startIndex:splitIndex], nodeList)
+		startIndex = splitIndex + 1
+	}
+	handleSubWord(word[startIndex:], nodeList)
+	return nodeList, true
 }
 
 func handleSubWord(word string, nodeList *types.List) {
@@ -207,12 +224,10 @@ func parseFloat(word string) (types.Object, bool) {
 }
 
 func parseUnquote(word string) (types.Object, bool) {
-	var res types.Object
-	ok := word[0] == ','
-	if ok {
-		nodeList := types.NewList(types.Identifier(UnquoteName))
-		handleSubWord(word[1:], nodeList)
-		res = nodeList
+	if word[0] != ',' {
+		return nil, false
 	}
-	return res, ok
+	nodeList := types.NewList(types.Identifier(UnquoteName))
+	handleSubWord(word[1:], nodeList)
+	return nodeList, true
 }

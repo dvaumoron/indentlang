@@ -40,38 +40,41 @@ func CreateHtmlElement(name string) types.NativeAppliable {
 		attrs := types.NewList()
 		childs := types.NewList()
 		types.ForEach(itArgs, func(arg types.Object) bool {
-			value := arg.Eval(env)
-			switch casted := value.(type) {
+			switch casted := arg.Eval(env).(type) {
 			case types.NoneType:
 				// ignore None
 			case *types.List:
 				if casted.HasCategory(parser.AttributeName) {
-					attrs.Add(value)
+					attrs.Add(casted)
 				} else {
-					childs.Add(value)
+					childs.Add(casted)
 				}
 			default:
-				childs.Add(value)
+				childs.Add(casted)
 			}
 			return true
 		})
 		res := types.NewList(openElement, wrappedName)
 		types.ForEach(attrs, func(value types.Object) bool {
 			attr, ok := value.(types.Iterable)
+			if !ok {
+				return true
+			}
+
+			itAttr := attr.Iter()
+			defer itAttr.Close()
+			attrName, ok := itAttr.Next()
+			if !ok {
+				return true
+			}
+
+			res.Add(space)
+			res.Add(attrName)
+			attrValue, ok := itAttr.Next()
 			if ok {
-				itAttr := attr.Iter()
-				defer itAttr.Close()
-				attrName, ok := itAttr.Next()
-				if ok {
-					res.Add(space)
-					res.Add(attrName)
-					attrValue, ok := itAttr.Next()
-					if ok {
-						res.Add(equalQuote)
-						res.Add(attrValue)
-						res.Add(quote)
-					}
-				}
+				res.Add(equalQuote)
+				res.Add(attrValue)
+				res.Add(quote)
 			}
 			return true
 		})

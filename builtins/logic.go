@@ -50,33 +50,33 @@ func equalsFunc(env types.Environment, itArgs types.Iterator) types.Object {
 	return types.Boolean(ok && equals(arg0.Eval(env), arg1.Eval(env)))
 }
 
-func equals(value0, value1 types.Object) bool {
-	res := false
+func equals(value0 types.Object, value1 types.Object) bool {
 	switch casted0 := value0.(type) {
 	case types.NoneType:
-		_, res = value1.(types.NoneType)
+		_, ok := value1.(types.NoneType)
+		return ok
 	case types.Boolean:
 		casted1, ok := value1.(types.Boolean)
-		res = ok && (casted0 == casted1)
+		return ok && (casted0 == casted1)
 	case types.Integer:
 		switch casted1 := value1.(type) {
 		case types.Integer:
-			res = casted0 == casted1
+			return casted0 == casted1
 		case types.Float:
-			res = types.Float(casted0) == casted1
+			return types.Float(casted0) == casted1
 		}
 	case types.Float:
 		switch casted1 := value1.(type) {
 		case types.Integer:
-			res = casted0 == types.Float(casted1)
+			return casted0 == types.Float(casted1)
 		case types.Float:
-			res = casted0 == casted1
+			return casted0 == casted1
 		}
 	case types.String:
 		casted1, ok := value1.(types.String)
-		res = ok && (casted0 == casted1)
+		return ok && (casted0 == casted1)
 	}
-	return res
+	return false
 }
 
 func notEqualsFunc(env types.Environment, itArgs types.Iterator) types.Object {
@@ -95,19 +95,19 @@ type ordered interface {
 	number | string
 }
 
-func greaterThan[O ordered](value0, value1 O) bool {
+func greaterThan[O ordered](value0 O, value1 O) bool {
 	return value0 > value1
 }
 
-func greaterEqual[O ordered](value0, value1 O) bool {
+func greaterEqual[O ordered](value0 O, value1 O) bool {
 	return value0 >= value1
 }
 
-func lessThan[O ordered](value0, value1 O) bool {
+func lessThan[O ordered](value0 O, value1 O) bool {
 	return value0 < value1
 }
 
-func lessEqual[O ordered](value0, value1 O) bool {
+func lessEqual[O ordered](value0 O, value1 O) bool {
 	return value0 <= value1
 }
 
@@ -150,40 +150,41 @@ func lessEqualFunc(env types.Environment, itArgs types.Iterator) types.Object {
 
 func compareFunc(env types.Environment, itArgs types.Iterator, c *comparator) types.Object {
 	arg0, res := itArgs.Next()
-	if res {
-		res = false
-		previousValue := arg0.Eval(env)
-		types.ForEach(itArgs, func(currentArg types.Object) bool {
-			currentValue := currentArg.Eval(env)
-			// change the variable that will be returned in the caller
-			res = compare(previousValue, currentValue, c)
-			previousValue = currentValue
-			return res
-		})
+	if !res {
+		return types.Boolean(false)
 	}
+
+	res = false
+	previousValue := arg0.Eval(env)
+	types.ForEach(itArgs, func(currentArg types.Object) bool {
+		currentValue := currentArg.Eval(env)
+		// change the variable that will be returned in the caller
+		res = compare(previousValue, currentValue, c)
+		previousValue = currentValue
+		return res
+	})
 	return types.Boolean(res)
 }
 
 func compare(value0 types.Object, value1 types.Object, c *comparator) bool {
-	res := false
 	switch casted0 := value0.(type) {
 	case types.Integer:
 		switch casted1 := value1.(type) {
 		case types.Integer:
-			res = c.compareInt(int64(casted0), int64(casted1))
+			return c.compareInt(int64(casted0), int64(casted1))
 		case types.Float:
-			res = c.compareFloat(float64(casted0), float64(casted1))
+			return c.compareFloat(float64(casted0), float64(casted1))
 		}
 	case types.Float:
 		switch casted1 := value1.(type) {
 		case types.Integer:
-			res = c.compareFloat(float64(casted0), float64(casted1))
+			return c.compareFloat(float64(casted0), float64(casted1))
 		case types.Float:
-			res = c.compareFloat(float64(casted0), float64(casted1))
+			return c.compareFloat(float64(casted0), float64(casted1))
 		}
 	case types.String:
 		casted1, ok := value1.(types.String)
-		res = ok && c.compareString(string(casted0), string(casted1))
+		return ok && c.compareString(string(casted0), string(casted1))
 	}
-	return res
+	return false
 }

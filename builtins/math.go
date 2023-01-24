@@ -81,66 +81,62 @@ func cumulFunc(env types.Environment, itArgs types.Iterator, carac *cumulCarac) 
 		}
 		return condition
 	})
-	var res types.Object = types.None
 	if condition {
 		if hasFloat {
-			res = types.Float(cumulFloat(float64(cumul), cumulF))
+			return types.Float(cumulFloat(float64(cumul), cumulF))
 		} else {
-			res = types.Integer(cumul)
+			return types.Integer(cumul)
 		}
 	}
-	return res
+	return types.None
 }
 
 func minusFunc(env types.Environment, itArgs types.Iterator) types.Object {
 	arg0, _ := itArgs.Next()
 	arg1, _ := itArgs.Next()
-	var res types.Object = types.None
 	switch casted := arg0.Eval(env).(type) {
 	case types.Integer:
 		switch casted2 := arg1.Eval(env).(type) {
 		case types.Integer:
-			res = types.Integer(casted - casted2)
+			return types.Integer(casted - casted2)
 		case types.Float:
-			res = types.Float(float64(casted) - float64(casted2))
+			return types.Float(float64(casted) - float64(casted2))
 		}
 	case types.Float:
 		switch casted2 := arg1.Eval(env).(type) {
 		case types.Integer:
-			res = types.Float(float64(casted) - float64(casted2))
+			return types.Float(float64(casted) - float64(casted2))
 		case types.Float:
-			res = types.Float(casted - casted2)
+			return types.Float(casted - casted2)
 		}
 	}
-	return res
+	return types.None
 }
 
 func divideFunc(env types.Environment, itArgs types.Iterator) types.Object {
 	arg0, _ := itArgs.Next()
 	arg1, _ := itArgs.Next()
-	var res types.Object = types.None
 	switch casted := arg0.Eval(env).(type) {
 	case types.Integer:
-		res = divideObject(float64(casted), arg1.Eval(env))
+		return divideObject(float64(casted), arg1.Eval(env))
 	case types.Float:
-		res = divideObject(float64(casted), arg1.Eval(env))
+		return divideObject(float64(casted), arg1.Eval(env))
 	}
-	return res
+	return types.None
 }
 
 func divideObject(a float64, b types.Object) types.Object {
-	var res types.Object = types.None
 	switch casted := b.(type) {
 	case types.Integer:
 		if casted != 0 {
-			res = types.Float(a / float64(casted))
+			return types.Float(a / float64(casted))
 		}
 	case types.Float:
 		if casted != 0 {
-			res = types.Float(a / float64(casted))
+			return types.Float(a / float64(casted))
 		}
 	}
-	return res
+	return types.None
 }
 
 func floorDivideOperator(a, b int64) int64 {
@@ -161,16 +157,15 @@ func remainderFunc(env types.Environment, itArgs types.Iterator) types.Object {
 
 func intOperatorFunc(env types.Environment, itArgs types.Iterator, intOperator func(int64, int64) int64) types.Object {
 	arg0, _ := itArgs.Next()
-	arg1, _ := itArgs.Next()
-	var res types.Object = types.None
 	a, ok := arg0.Eval(env).(types.Integer)
 	if ok {
+		arg1, _ := itArgs.Next()
 		b, _ := arg1.Eval(env).(types.Integer)
 		if b != 0 { // non integer and zero are treated the same way thanks to type assertion
-			res = types.Integer(intOperator(int64(a), int64(b)))
+			return types.Integer(intOperator(int64(a), int64(b)))
 		}
 	}
-	return res
+	return types.None
 }
 
 func sumSetForm(env types.Environment, itArgs types.Iterator) types.Object {

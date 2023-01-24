@@ -23,14 +23,11 @@ func ifForm(env types.Environment, itArgs types.Iterator) types.Object {
 	arg0, _ := itArgs.Next()
 	arg1, _ := itArgs.Next()
 	test := extractBoolean(arg0.Eval(env))
-	var res types.Object
 	if test {
-		res = arg1.Eval(env)
-	} else {
-		arg2, _ := itArgs.Next()
-		res = arg2.Eval(env)
+		return arg1.Eval(env)
 	}
-	return res
+	arg2, _ := itArgs.Next()
+	return arg2.Eval(env)
 }
 
 func forForm(env types.Environment, itArgs types.Iterator) types.Object {
@@ -140,8 +137,7 @@ func getForm(env types.Environment, itArgs types.Iterator) types.Object {
 	if ok {
 		res = res.Eval(env)
 		types.ForEach(itArgs, func(value types.Object) bool {
-			var current types.StringLoadable
-			current, ok = res.(types.StringLoadable)
+			current, ok := res.(types.StringLoadable)
 			res = types.None
 			if ok {
 				var id types.Identifier
@@ -162,10 +158,9 @@ func loadFunc(env types.Environment, itArgs types.Iterator) types.Object {
 		res = res.Eval(env)
 		types.ForEach(itArgs, func(key types.Object) bool {
 			current, ok := res.(types.Loadable)
+			res = types.None
 			if ok {
 				res = current.Load(key.Eval(env))
-			} else {
-				res = types.None
 			}
 			return ok
 		})
@@ -184,11 +179,10 @@ func storeFunc(env types.Environment, itArgs types.Iterator) types.Object {
 			key, _ := it.Next()
 			var current types.Loadable
 			current, ok = arg.(types.Loadable)
-			if ok {
-				arg = current.Load(key)
-			} else {
+			if !ok {
 				break
 			}
+			arg = current.Load(key)
 		}
 		if ok {
 			current, ok := arg.(types.Storable)

@@ -32,21 +32,17 @@ type Template struct {
 }
 
 func (t *Template) Execute(w io.Writer, data any) error {
-	var err error
 	main, ok := t.env.LoadStr(builtins.MainName)
-	if ok {
-		var mainAppliable types.Appliable
-		mainAppliable, ok = main.(types.Appliable)
-		if ok {
-			// each call must have its environment to avoid conflict in parallele execution
-			local := types.NewLocalEnvironment(t.env)
-			_, err = mainAppliable.ApplyWithData(data, local, types.NewList()).WriteTo(w)
-		} else {
-			err = errors.New("the object Main is not an Appliable")
-		}
-	} else {
-		err = errors.New("cannot load object Main")
+	if !ok {
+		return errors.New("cannot load object Main")
 	}
+	mainAppliable, ok := main.(types.Appliable)
+	if !ok {
+		return errors.New("the object Main is not an Appliable")
+	}
+	// each call must have its environment to avoid conflict in parallele execution
+	local := types.NewLocalEnvironment(t.env)
+	_, err := mainAppliable.ApplyWithData(data, local, types.NewList()).WriteTo(w)
 	return err
 }
 

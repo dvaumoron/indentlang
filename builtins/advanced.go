@@ -43,24 +43,24 @@ func (q *quoteIterator) Close() {
 
 func evalUnquote(object types.Object, env types.Environment) types.Object {
 	list, ok := object.(*types.List)
-	res := object
-	if ok && list.Size() != 0 {
-		it := list.Iter()
-		defer it.Close()
-		value, _ := it.Next()
-		id, _ := value.(types.Identifier)
-		if id == parser.UnquoteName { // non indentifier are ""
-			arg, _ := it.Next()
-			res = arg.Eval(env)
-		} else {
-			resList := types.NewList()
-			resList.ImportCategories(list)
-			resList.Add(evalUnquote(value, env))
-			resList.AddAll(newQuoteIterator(it, env))
-			res = resList
-		}
+	if !ok || list.Size() == 0 {
+		return object
 	}
-	return res
+
+	it := list.Iter()
+	defer it.Close()
+	value, _ := it.Next()
+	id, _ := value.(types.Identifier)
+	if id == parser.UnquoteName { // non indentifier are ""
+		arg, _ := it.Next()
+		return arg.Eval(env)
+	}
+
+	resList := types.NewList()
+	resList.ImportCategories(list)
+	resList.Add(evalUnquote(value, env))
+	resList.AddAll(newQuoteIterator(it, env))
+	return resList
 }
 
 func newQuoteIterator(it types.Iterator, env types.Environment) *quoteIterator {
@@ -90,17 +90,16 @@ func delForm(env types.Environment, itArgs types.Iterator) types.Object {
 	arg0, _ := itArgs.Next()
 	arg1, ok := itArgs.Next()
 	if ok {
-		var dict types.Environment
-		dict, ok = arg0.Eval(env).(types.Environment)
-		if ok {
+		dict, _ := arg0.Eval(env).(types.Environment)
+		if dict != nil {
 			dict.Delete(arg1.Eval(env))
 		}
-	} else {
-		var id types.Identifier
-		id, ok = arg0.(types.Identifier)
-		if ok {
-			env.DeleteStr(string(id))
-		}
+		return types.None
+	}
+
+	id, ok := arg0.(types.Identifier)
+	if ok {
+		env.DeleteStr(string(id))
 	}
 	return types.None
 }
@@ -108,16 +107,18 @@ func delForm(env types.Environment, itArgs types.Iterator) types.Object {
 func addCategoryFunc(env types.Environment, itArgs types.Iterator) types.Object {
 	arg0, _ := itArgs.Next()
 	arg1, ok := itArgs.Next()
+	if !ok {
+		return types.None
+	}
+
+	list, ok := arg0.Eval(env).(*types.List)
+	if !ok {
+		return types.None
+	}
+
+	str, ok := arg1.Eval(env).(types.String)
 	if ok {
-		var list *types.List
-		list, ok = arg0.Eval(env).(*types.List)
-		if ok {
-			var str types.String
-			str, ok = arg1.Eval(env).(types.String)
-			if ok {
-				list.AddCategory(string(str))
-			}
-		}
+		list.AddCategory(string(str))
 	}
 	return types.None
 }
@@ -125,19 +126,20 @@ func addCategoryFunc(env types.Environment, itArgs types.Iterator) types.Object 
 func hasCategoryFunc(env types.Environment, itArgs types.Iterator) types.Object {
 	arg0, _ := itArgs.Next()
 	arg1, ok := itArgs.Next()
-	res := false
-	if ok {
-		var list *types.List
-		list, ok = arg0.Eval(env).(*types.List)
-		if ok {
-			var str types.String
-			str, ok = arg1.Eval(env).(types.String)
-			if ok {
-				res = list.HasCategory(string(str))
-			}
-		}
+	if !ok {
+		return types.Boolean(false)
 	}
-	return types.Boolean(res)
+
+	list, ok := arg0.Eval(env).(*types.List)
+	if !ok {
+		return types.Boolean(false)
+	}
+
+	str, ok := arg1.Eval(env).(types.String)
+	if !ok {
+		return types.Boolean(false)
+	}
+	return types.Boolean(list.HasCategory(string(str)))
 }
 
 func addCustomRuleFunc(env types.Environment, itArgs types.Iterator) types.Object {

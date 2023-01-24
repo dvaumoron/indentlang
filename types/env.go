@@ -27,17 +27,17 @@ type BaseEnvironment struct {
 func (b BaseEnvironment) LoadStr(key string) (Object, bool) {
 	res, ok := b.objects[key]
 	if !ok {
-		res = None
+		return None, false
 	}
-	return res, ok
+	return res, true
 }
 
 func Load(env StringLoadable, key Object) Object {
 	str, ok := key.(String)
-	var res Object = None
-	if ok {
-		res, _ = env.LoadStr(string(str))
+	if !ok {
+		return None
 	}
+	res, _ := env.LoadStr(string(str))
 	return res
 }
 
@@ -107,10 +107,10 @@ type LocalEnvironment struct {
 
 func (l *LocalEnvironment) LoadStr(key string) (Object, bool) {
 	res, ok := l.BaseEnvironment.LoadStr(key)
-	if !ok {
-		res, ok = l.parent.LoadStr(key)
+	if ok {
+		return res, true
 	}
-	return res, ok
+	return l.parent.LoadStr(key)
 }
 
 func (l *LocalEnvironment) Load(key Object) Object {
@@ -128,10 +128,10 @@ type DataEnvironment struct {
 
 func (d *DataEnvironment) LoadStr(key string) (Object, bool) {
 	res, ok := d.loadData(key)
-	if !ok {
-		res, ok = d.Environment.LoadStr(key)
+	if ok {
+		return res, true
 	}
-	return res, ok
+	return d.Environment.LoadStr(key)
 }
 
 func (d *DataEnvironment) Load(key Object) Object {
@@ -160,10 +160,10 @@ type MergeEnvironment struct {
 
 func (m *MergeEnvironment) LoadStr(key string) (Object, bool) {
 	res, ok := m.creationEnv.LoadStr(key)
-	if !ok {
-		res, ok = m.callEnv.LoadStr(key)
+	if ok {
+		return res, true
 	}
-	return res, ok
+	return m.callEnv.LoadStr(key)
 }
 
 func (m *MergeEnvironment) Load(key Object) Object {

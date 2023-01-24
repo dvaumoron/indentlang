@@ -85,28 +85,26 @@ func (s String) Eval(env Environment) Object {
 }
 
 func (s String) LoadInt(index int) Object {
-	var res Object = None
-	if 0 <= index && index < len(s) {
-		res = s[index : index+1]
+	if index < 0 || index >= len(s) {
+		return None
 	}
-	return res
+	return s[index : index+1]
 }
 
 func (s String) Load(key Object) Object {
-	var res Object = None
 	switch casted := key.(type) {
 	case Integer:
-		res = s.LoadInt(int(casted))
+		return s.LoadInt(int(casted))
 	case Float:
-		res = s.LoadInt(int(casted))
+		return s.LoadInt(int(casted))
 	case *List:
 		max := len(s)
 		start, end := extractIndex(casted.inner, max)
 		if 0 <= start && start <= end && end <= max {
-			res = s[start:end]
+			return s[start:end]
 		}
 	}
-	return res
+	return None
 }
 
 func (s String) Size() int {

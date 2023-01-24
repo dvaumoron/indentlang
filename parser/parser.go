@@ -169,11 +169,10 @@ CharLoop:
 			buildingWord = append(buildingWord, <-chars)
 		}
 	}
-	var err error
 	if unended {
-		err = errors.New("unended string")
+		return nil, errors.New("unended string")
 	}
-	return buildingWord, err
+	return buildingWord, nil
 }
 
 func finishLine(words chan<- string, buildingWord []rune, done <-chan types.NoneType) {

@@ -92,21 +92,19 @@ func (e *enumerateIterator) Close() {
 func enumerateFunc(env types.Environment, itArgs types.Iterator) types.Object {
 	arg, _ := itArgs.Next()
 	it, ok := arg.Eval(env).(types.Iterable)
-	var res types.Object = types.None
-	if ok {
-		res = &enumerateIterator{inner: it.Iter()}
+	if !ok {
+		return types.None
 	}
-	return res
+	return &enumerateIterator{inner: it.Iter()}
 }
 
 func iterFunc(env types.Environment, itArgs types.Iterator) types.Object {
 	arg0, _ := itArgs.Next()
 	it, ok := arg0.Eval(env).(types.Iterable)
-	var res types.Object = types.None
-	if ok {
-		res = it.Iter()
+	if !ok {
+		return types.None
 	}
-	return res
+	return it.Iter()
 }
 
 func nextFunc(env types.Environment, itArgs types.Iterator) types.Object {
@@ -132,11 +130,10 @@ func closeFunc(env types.Environment, itArgs types.Iterator) types.Object {
 func sizeFunc(env types.Environment, itArgs types.Iterator) types.Object {
 	arg0, _ := itArgs.Next()
 	it, ok := arg0.Eval(env).(types.Sizable)
-	var res types.Object = types.None
-	if ok {
-		res = types.Integer(it.Size())
+	if !ok {
+		return types.None
 	}
-	return res
+	return types.Integer(it.Size())
 }
 
 type evalIterator struct {

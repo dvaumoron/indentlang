@@ -53,10 +53,9 @@ func (l *List) Add(value Object) {
 
 // If the action func return false that break the loop.
 func ForEach(it Iterable, action func(Object) bool) {
-	ok := true
 	it2 := it.Iter()
 	defer it2.Close()
-	for ok {
+	for ok := true; ok; {
 		var value Object
 		value, ok = it2.Next()
 		if ok {
@@ -74,60 +73,51 @@ func (l *List) AddAll(it Iterable) *List {
 }
 
 func convertToInt(arg Object, init int) int {
-	res := init
 	casted, ok := arg.(Integer)
-	if ok {
-		res = int(casted)
+	if !ok {
+		return init
 	}
-	return res
+	return int(casted)
 }
 
 func extractIndex(args []Object, max int) (int, int) {
-	var arg0, arg1 Object = None, None
 	switch len(args) {
 	case 0:
-		// nothing to do, initialisation to None is enough
-	default:
-		// here, there is always enough element in the slice
-		arg1 = args[1]
-		fallthrough // allow initialisation of arg0
+		return 0, max
 	case 1:
-		// without fallthrough arg1 is None
-		arg0 = args[0]
+		return convertToInt(args[0], 0), max
 	}
-	return convertToInt(arg0, 0), convertToInt(arg1, max)
+	return convertToInt(args[0], 0), convertToInt(args[1], max)
 }
 
 func (l *List) LoadInt(index int) Object {
-	var res Object = None
-	if 0 <= index && index < len(l.inner) {
-		res = l.inner[index]
+	if index < 0 || index >= len(l.inner) {
+		return None
 	}
-	return res
+	return l.inner[index]
 }
 
 func (l *List) Load(key Object) Object {
-	var res Object = None
 	switch casted := key.(type) {
 	case Integer:
-		res = l.LoadInt(int(casted))
+		return l.LoadInt(int(casted))
 	case Float:
-		res = l.LoadInt(int(casted))
+		return l.LoadInt(int(casted))
 	case *List:
 		max := len(l.inner)
 		start, end := extractIndex(casted.inner, max)
 		if 0 <= start && start <= end && end <= max {
-			res = &List{categories: l.CopyCategories(), inner: l.inner[start:end]}
+			return &List{categories: l.CopyCategories(), inner: l.inner[start:end]}
 		}
 	}
-	return res
+	return None
 }
 
-func (l *List) Store(key, value Object) {
+func (l *List) Store(key Object, value Object) {
 	integer, ok := key.(Integer)
 	if ok {
 		index := int(integer)
-		if 0 <= index && index < len(l.inner) {
+		if index >= 0 && index < len(l.inner) {
 			l.inner[index] = value
 		}
 	}
@@ -150,9 +140,9 @@ func (it *chanIterator) Iter() Iterator {
 func (it *chanIterator) Next() (Object, bool) {
 	value, ok := <-it.receiver
 	if !ok {
-		value = None
+		return None, false
 	}
-	return value, ok
+	return value, true
 }
 
 func (it *chanIterator) Close() {
@@ -199,21 +189,21 @@ func (l *List) WriteTo(w io.Writer) (int64, error) {
 func (l *List) Eval(env Environment) Object {
 	it := l.Iter()
 	defer it.Close()
-	res, ok := it.Next()
-	if ok {
-		value0 := res.Eval(env)
-		if appliable, ok := value0.(Appliable); ok {
-			res = appliable.Apply(env, it)
-		} else {
-			l2 := &List{categories: l.CopyCategories(), inner: make([]Object, 0, len(l.inner))}
-			l2.Add(value0)
-			for _, value := range l.inner[1:] {
-				l2.Add(value.Eval(env))
-			}
-			res = l2
-		}
+	elem0, ok := it.Next()
+	if !ok {
+		return None
 	}
-	return res
+	value0 := elem0.Eval(env)
+	if appliable, ok := value0.(Appliable); ok {
+		return appliable.Apply(env, it)
+	}
+	l2 := &List{categories: l.CopyCategories(), inner: make([]Object, 0, len(l.inner))}
+	l2.Add(value0)
+	for _, value := range l.inner[1:] {
+		l2.Add(value.Eval(env))
+	}
+	return l2
+
 }
 
 func NewList(objects ...Object) *List {

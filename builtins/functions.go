@@ -62,17 +62,15 @@ func noEval[T any](o T, env types.Environment) T {
 
 var functionKind = &noArgsKind{
 	returnForm: types.MakeNativeAppliable(func(env types.Environment, itArgs types.Iterator) types.Object {
-		var res types.Object
 		evaluated := types.NewList().AddAll(newEvalIterator(itArgs, env))
 		switch size := evaluated.Size(); size {
 		case 0:
-			res = types.None
+			env.StoreStr(hiddenReturnName, types.None)
 		case 1:
-			res = evaluated.LoadInt(0)
+			env.StoreStr(hiddenReturnName, evaluated.LoadInt(0))
 		default:
-			res = evaluated
+			env.StoreStr(hiddenReturnName, evaluated)
 		}
-		env.StoreStr(hiddenReturnName, res)
 		panic(returnMarker{})
 	}),
 	evalArgs: func(itArgs types.Iterator, env types.Environment) types.Iterator {
@@ -140,12 +138,10 @@ func (u *userAppliable) Apply(callEnv types.Environment, args types.Iterable) (r
 	u.retrieveArgs(callEnv, local, itArgs)
 	defer func() {
 		if r := recover(); r != nil {
-			_, ok := r.(returnMarker)
-			if ok {
-				res = u.evalReturn(callEnv, local)
-			} else {
+			if _, ok := r.(returnMarker); !ok {
 				panic(r)
 			}
+			res = u.evalReturn(callEnv, local)
 		}
 	}()
 	evalBody(u.body, local)
@@ -161,12 +157,10 @@ func (u *userAppliable) ApplyWithData(data any, callEnv types.Environment, args 
 	u.retrieveArgs(callEnv, local, itArgs)
 	defer func() {
 		if r := recover(); r != nil {
-			_, ok := r.(returnMarker)
-			if ok {
-				res = u.evalReturn(callEnv, local)
-			} else {
+			if _, ok := r.(returnMarker); !ok {
 				panic(r)
 			}
+			res = u.evalReturn(callEnv, local)
 		}
 	}()
 	evalBody(u.body, local)
@@ -178,12 +172,10 @@ func (u *userAppliable) defaultApply(callEnv types.Environment, itArgs types.Ite
 	u.defaultRetrieveArgs(callEnv, local, itArgs)
 	defer func() {
 		if r := recover(); r != nil {
-			_, ok := r.(returnMarker)
-			if ok {
-				res = u.evalReturn(callEnv, local)
-			} else {
+			if _, ok := r.(returnMarker); !ok {
 				panic(r)
 			}
+			res = u.evalReturn(callEnv, local)
 		}
 	}()
 	evalBody(u.body, local)
@@ -234,11 +226,10 @@ func appliableForm(env types.Environment, itArgs types.Iterator, kind *noArgsKin
 func lambdaForm(env types.Environment, itArgs types.Iterator) types.Object {
 	declared, _ := itArgs.Next()
 	body := types.NewList().AddAll(itArgs)
-	var res types.Object = types.None
-	if body.Size() != 0 {
-		res = newUserAppliable(env, declared, body, functionKind)
+	if body.Size() == 0 {
+		return types.None
 	}
-	return res
+	return newUserAppliable(env, declared, body, functionKind)
 }
 
 func callFunc(env types.Environment, itArgs types.Iterator) types.Object {

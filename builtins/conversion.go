@@ -28,11 +28,10 @@ import (
 func identifierConvFunc(env types.Environment, itArgs types.Iterator) types.Object {
 	arg, _ := itArgs.Next()
 	s, ok := arg.Eval(env).(types.String)
-	var res types.Object = types.None
-	if ok {
-		res = types.Identifier(s)
+	if !ok {
+		return types.None
 	}
-	return res
+	return types.Identifier(s)
 }
 
 func boolConvFunc(env types.Environment, itArgs types.Iterator) types.Object {
@@ -41,20 +40,19 @@ func boolConvFunc(env types.Environment, itArgs types.Iterator) types.Object {
 }
 
 func extractBoolean(o types.Object) bool {
-	res := true
 	switch casted := o.(type) {
 	case types.NoneType:
-		res = false
+		return false
 	case types.Boolean:
-		res = bool(casted)
+		return bool(casted)
 	case types.Integer:
-		res = casted != 0
+		return casted != 0
 	case types.Float:
-		res = casted != 0
+		return casted != 0
 	case types.Sizable:
-		res = casted.Size() != 0
+		return casted.Size() != 0
 	}
-	return res
+	return true
 }
 
 func intConvFunc(env types.Environment, itArgs types.Iterator) types.Object {
@@ -63,23 +61,22 @@ func intConvFunc(env types.Environment, itArgs types.Iterator) types.Object {
 }
 
 func extractInteger(o types.Object) int64 {
-	var res int64
 	switch casted := o.(type) {
 	case types.Boolean:
 		if casted {
-			res = 1
+			return 1
 		}
 	case types.Integer:
-		res = int64(casted)
+		return int64(casted)
 	case types.Float:
-		res = int64(casted)
+		return int64(casted)
 	case types.String:
 		temp, err := strconv.ParseInt(string(casted), 10, 64)
 		if err == nil {
-			res = temp
+			return temp
 		}
 	}
-	return res
+	return 0
 }
 
 func floatConvFunc(env types.Environment, itArgs types.Iterator) types.Object {
@@ -88,23 +85,22 @@ func floatConvFunc(env types.Environment, itArgs types.Iterator) types.Object {
 }
 
 func extractFloat(o types.Object) float64 {
-	var res float64
 	switch casted := o.(type) {
 	case types.Boolean:
 		if casted {
-			res = 1
+			return 1
 		}
 	case types.Integer:
-		res = float64(casted)
+		return float64(casted)
 	case types.Float:
-		res = float64(casted)
+		return float64(casted)
 	case types.String:
 		temp, err := strconv.ParseFloat(string(casted), 64)
 		if err == nil {
-			res = temp
+			return temp
 		}
 	}
-	return res
+	return 0
 }
 
 func stringConvFunc(env types.Environment, itArgs types.Iterator) types.Object {
@@ -113,20 +109,18 @@ func stringConvFunc(env types.Environment, itArgs types.Iterator) types.Object {
 }
 
 func extractString(o types.Object) string {
-	res := ""
 	switch casted := o.(type) {
 	case types.Boolean:
 		if casted {
-			res = "true"
-		} else {
-			res = "false"
+			return "true"
 		}
+		return "false"
 	case types.Integer:
-		res = fmt.Sprint(int64(casted))
+		return fmt.Sprint(int64(casted))
 	case types.Float:
-		res = fmt.Sprint(float64(casted))
+		return fmt.Sprint(float64(casted))
 	case types.String:
-		res = string(casted)
+		return string(casted)
 	case types.Iterable:
 		it := casted.Iter()
 		defer it.Close()
@@ -142,9 +136,9 @@ func extractString(o types.Object) string {
 			})
 		}
 		builder.WriteRune(')')
-		res = builder.String()
+		return builder.String()
 	}
-	return res
+	return ""
 }
 
 func listFunc(env types.Environment, itArgs types.Iterator) types.Object {
@@ -155,17 +149,20 @@ func dictFunc(env types.Environment, itArgs types.Iterator) types.Object {
 	res := types.MakeBaseEnvironment()
 	types.ForEach(itArgs, func(arg types.Object) bool {
 		it, ok := arg.Eval(env).(types.Iterable)
+		if !ok {
+			return false
+		}
+
+		it2 := it.Iter()
+		defer it2.Close()
+		key, ok := it2.Next()
+		if !ok {
+			return false
+		}
+
+		value, ok := it2.Next()
 		if ok {
-			it2 := it.Iter()
-			defer it2.Close()
-			var key types.Object
-			key, ok = it2.Next()
-			if ok {
-				value, ok := it2.Next()
-				if ok {
-					res.Store(key, value)
-				}
-			}
+			res.Store(key, value)
 		}
 		return ok
 	})

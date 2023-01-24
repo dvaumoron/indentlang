@@ -42,30 +42,25 @@ func neverConfirm(s string) (Object, bool) {
 
 func loadFromStruct(value reflect.Value) ConvertString {
 	return func(fieldName string) (Object, bool) {
-		var res Object = None
 		field := value.FieldByName(fieldName)
-		ok := field.IsValid()
-		if ok {
-			res = valueToObject(field)
+		if !field.IsValid() {
+			return None, false
 		}
-		return res, ok
+		return valueToObject(field), true
 	}
 }
 
 func loadFromMap(value reflect.Value) ConvertString {
-	loadConfirm := neverConfirm
-	if stringType.AssignableTo(value.Type().Key()) {
-		loadConfirm = func(fieldName string) (Object, bool) {
-			var res Object = None
-			resValue := value.MapIndex(reflect.ValueOf(fieldName))
-			ok := resValue.IsValid()
-			if ok {
-				res = valueToObject(resValue)
-			}
-			return res, ok
-		}
+	if !stringType.AssignableTo(value.Type().Key()) {
+		return neverConfirm
 	}
-	return loadConfirm
+	return func(fieldName string) (Object, bool) {
+		resValue := value.MapIndex(reflect.ValueOf(fieldName))
+		if !resValue.IsValid() {
+			return None, false
+		}
+		return valueToObject(resValue), true
+	}
 }
 
 type LoadWrapper struct {
@@ -82,34 +77,33 @@ func (w LoadWrapper) LoadStr(s string) (Object, bool) {
 }
 
 func valueToObject(value reflect.Value) Object {
-	var res Object = None
 	value, isNil := indirect(value)
 	if !isNil {
 		switch value.Kind() {
 		case reflect.Bool:
-			res = Boolean(value.Bool())
+			return Boolean(value.Bool())
 		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-			res = Integer(value.Int())
+			return Integer(value.Int())
 		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-			res = Integer(int64(value.Uint()))
+			return Integer(int64(value.Uint()))
 		case reflect.Float32, reflect.Float64:
-			res = Float(value.Float())
+			return Float(value.Float())
 		case reflect.Complex64, reflect.Complex128:
-			res = String(fmt.Sprint(value.Complex()))
+			return String(fmt.Sprint(value.Complex()))
 		case reflect.String:
-			res = String(value.String())
+			return String(value.String())
 		case reflect.Array, reflect.Slice:
 			size := value.Len()
 			l := &List{categories: map[string]NoneType{}, inner: make([]Object, 0, size)}
 			for index := 0; index < size; index++ {
 				l.Add(valueToObject(value.Index(index)))
 			}
-			res = l
+			return l
 		case reflect.Struct:
-			res = LoadWrapper{loadData: loadFromStruct(value)}
+			return LoadWrapper{loadData: loadFromStruct(value)}
 		case reflect.Map:
-			res = LoadWrapper{loadData: loadFromMap(value)}
+			return LoadWrapper{loadData: loadFromMap(value)}
 		}
 	}
-	return res
+	return None
 }
