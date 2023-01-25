@@ -77,6 +77,33 @@ func (b BaseEnvironment) Size() int {
 	return len(b.objects)
 }
 
+type chanIterator struct {
+	NoneType
+	receiver    <-chan Object
+	closeSender chan<- NoneType
+}
+
+func (it *chanIterator) Iter() Iterator {
+	return it
+}
+
+func (it *chanIterator) Next() (Object, bool) {
+	value, ok := <-it.receiver
+	if !ok {
+		return None, false
+	}
+	return value, true
+}
+
+func (it *chanIterator) Close() {
+	select {
+	case it.closeSender <- None:
+		close(it.closeSender)
+		it.closeSender = nil
+	default:
+	}
+}
+
 func (b BaseEnvironment) Iter() Iterator {
 	objectChannel := make(chan Object)
 	closeChannel := make(chan NoneType)

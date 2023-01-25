@@ -127,50 +127,31 @@ func (l *List) Size() int {
 	return len(l.inner)
 }
 
-type chanIterator struct {
+type listIterator struct {
 	NoneType
-	receiver    <-chan Object
-	closeSender chan<- NoneType
+	list    *List
+	current int
 }
 
-func (it *chanIterator) Iter() Iterator {
+func (it *listIterator) Iter() Iterator {
 	return it
 }
 
-func (it *chanIterator) Next() (Object, bool) {
-	value, ok := <-it.receiver
-	if !ok {
+func (it *listIterator) Next() (Object, bool) {
+	inner := it.list.inner
+	current := it.current
+	if current >= len(inner) {
 		return None, false
 	}
-	return value, true
+	it.current++
+	return inner[current], true
 }
 
-func (it *chanIterator) Close() {
-	select {
-	case it.closeSender <- None:
-		close(it.closeSender)
-		it.closeSender = nil
-	default:
-	}
+func (it *listIterator) Close() {
 }
 
 func (l *List) Iter() Iterator {
-	objectChannel := make(chan Object)
-	closeChannel := make(chan NoneType)
-	go sendSliceValue(l.inner, objectChannel, closeChannel)
-	return &chanIterator{receiver: objectChannel, closeSender: closeChannel}
-}
-
-func sendSliceValue(objects []Object, transmitter chan<- Object, shouldClose <-chan NoneType) {
-ForLoop:
-	for _, value := range objects {
-		select {
-		case transmitter <- value:
-		case <-shouldClose:
-			break ForLoop
-		}
-	}
-	close(transmitter)
+	return &listIterator{list: l}
 }
 
 func (l *List) WriteTo(w io.Writer) (int64, error) {
@@ -203,7 +184,6 @@ func (l *List) Eval(env Environment) Object {
 		l2.Add(value.Eval(env))
 	}
 	return l2
-
 }
 
 func NewList(objects ...Object) *List {
