@@ -142,28 +142,28 @@ type evalIterator struct {
 	env   types.Environment
 }
 
-func (e *evalIterator) Iter() types.Iterator {
+func (e evalIterator) Iter() types.Iterator {
 	return e
 }
 
-func (e *evalIterator) Next() (types.Object, bool) {
+func (e evalIterator) Next() (types.Object, bool) {
 	value, ok := e.inner.Next()
 	return value.Eval(e.env), ok
 }
 
-func (e *evalIterator) Close() {
+func (e evalIterator) Close() {
 	e.inner.Close()
 }
 
-func newEvalIterator(it types.Iterator, env types.Environment) *evalIterator {
-	return &evalIterator{inner: it, env: env}
+func makeEvalIterator(it types.Iterator, env types.Environment) evalIterator {
+	return evalIterator{inner: it, env: env}
 }
 
 func addFunc(env types.Environment, itArgs types.Iterator) types.Object {
 	arg0, _ := itArgs.Next()
 	list, ok := arg0.Eval(env).(*types.List)
 	if ok {
-		list.AddAll(newEvalIterator(itArgs, env))
+		list.AddAll(makeEvalIterator(itArgs, env))
 	}
 	return types.None
 }

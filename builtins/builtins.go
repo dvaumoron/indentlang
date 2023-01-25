@@ -220,6 +220,6 @@ func initBuitins() types.BaseEnvironment {
 	// lack of utilities (for string, iterator, function, ...)
 
 	// give parser package a protected copy to use in user custom rules
-	parser.BuiltinsCopy = types.NewLocalEnvironment(base)
+	parser.BuiltinsCopy = types.MakeLocalEnvironment(base)
 	return base
 }

@@ -142,7 +142,7 @@ func extractString(o types.Object) string {
 }
 
 func listFunc(env types.Environment, itArgs types.Iterator) types.Object {
-	return types.NewList().AddAll(newEvalIterator(itArgs, env))
+	return types.NewList().AddAll(makeEvalIterator(itArgs, env))
 }
 
 func dictFunc(env types.Environment, itArgs types.Iterator) types.Object {

@@ -31,7 +31,7 @@ type Template struct {
 	env types.Environment
 }
 
-func (t *Template) Execute(w io.Writer, data any) error {
+func (t Template) Execute(w io.Writer, data any) error {
 	main, ok := t.env.LoadStr(builtins.MainName)
 	if !ok {
 		return errors.New("cannot load object Main")
@@ -41,15 +41,15 @@ func (t *Template) Execute(w io.Writer, data any) error {
 		return errors.New("the object Main is not an Appliable")
 	}
 	// each call must have its environment to avoid conflict in parallele execution
-	local := types.NewLocalEnvironment(t.env)
+	local := types.MakeLocalEnvironment(t.env)
 	_, err := mainAppliable.ApplyWithData(data, local, types.NewList()).WriteTo(w)
 	return err
 }
 
-func ParsePath(path string) (*Template, error) {
+func ParsePath(path string) (Template, error) {
 	path, err := filepath.Abs(path)
 	if err != nil {
-		return nil, err
+		return Template{}, err
 	}
 
 	splitIndex := strings.LastIndex(path, "/") + 1
@@ -57,11 +57,11 @@ func ParsePath(path string) (*Template, error) {
 	return ParseWithImport(builtins.MakeImportDirective(basePath), fileName), nil
 }
 
-func ParseWithImport(importDirective types.Appliable, filePath string) *Template {
-	env := types.NewLocalEnvironment(builtins.Builtins)
+func ParseWithImport(importDirective types.Appliable, filePath string) Template {
+	env := types.MakeLocalEnvironment(builtins.Builtins)
 	env.StoreStr(builtins.ImportName, importDirective)
 
 	importDirective.Apply(env, types.NewList(types.String(filePath)))
 
-	return &Template{env: env}
+	return Template{env: env}
 }

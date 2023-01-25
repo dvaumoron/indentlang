@@ -136,7 +136,7 @@ func (n NativeAppliable) Apply(env Environment, it Iterable) Object {
 func (n NativeAppliable) ApplyWithData(data any, env Environment, it Iterable) Object {
 	it2 := it.Iter()
 	defer it2.Close()
-	return n.inner(NewDataEnvironment(data, env), it2)
+	return n.inner(MakeDataEnvironment(data, env), it2)
 }
 
 func MakeNativeAppliable(f func(Environment, Iterator) Object) NativeAppliable {

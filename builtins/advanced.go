@@ -28,16 +28,16 @@ type quoteIterator struct {
 	env   types.Environment
 }
 
-func (q *quoteIterator) Iter() types.Iterator {
+func (q quoteIterator) Iter() types.Iterator {
 	return q
 }
 
-func (q *quoteIterator) Next() (types.Object, bool) {
+func (q quoteIterator) Next() (types.Object, bool) {
 	value, ok := q.inner.Next()
 	return evalUnquote(value, q.env), ok
 }
 
-func (q *quoteIterator) Close() {
+func (q quoteIterator) Close() {
 	q.inner.Close()
 }
 
@@ -59,12 +59,12 @@ func evalUnquote(object types.Object, env types.Environment) types.Object {
 	resList := types.NewList()
 	resList.ImportCategories(list)
 	resList.Add(evalUnquote(value, env))
-	resList.AddAll(newQuoteIterator(it, env))
+	resList.AddAll(makeQuoteIterator(it, env))
 	return resList
 }
 
-func newQuoteIterator(it types.Iterator, env types.Environment) *quoteIterator {
-	return &quoteIterator{inner: it, env: env}
+func makeQuoteIterator(it types.Iterator, env types.Environment) quoteIterator {
+	return quoteIterator{inner: it, env: env}
 }
 
 func quoteForm(env types.Environment, itArgs types.Iterator) types.Object {

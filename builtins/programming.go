@@ -169,7 +169,7 @@ func loadFunc(env types.Environment, itArgs types.Iterator) types.Object {
 }
 
 func storeFunc(env types.Environment, itArgs types.Iterator) types.Object {
-	evaluated := types.NewList().AddAll(newEvalIterator(itArgs, env))
+	evaluated := types.NewList().AddAll(makeEvalIterator(itArgs, env))
 	if size := evaluated.Size() - 2; size > 0 {
 		it := evaluated.Iter()
 		defer it.Close()

@@ -94,7 +94,7 @@ func importer(requestReceiver <-chan importRequest, responseReceiver <-chan impo
 const ImportName = "Import"
 
 func innerImporter(basePath, totalPath string) {
-	env := types.NewLocalEnvironment(Builtins)
+	env := types.MakeLocalEnvironment(Builtins)
 	env.StoreStr(ImportName, makeCheckedImportDirective(basePath))
 	// nested environment to isolate the directive Import, this avoid copying
 	var local types.Environment
@@ -106,7 +106,7 @@ func innerImporter(basePath, totalPath string) {
 
 	node, err = parser.Parse(string(tmplData))
 	if err == nil {
-		local = types.NewLocalEnvironment(env)
+		local = types.MakeLocalEnvironment(env)
 		node.Eval(local)
 	}
 End:

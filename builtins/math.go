@@ -47,10 +47,10 @@ func multNumber[N number](a, b N) N {
 	return a * b
 }
 
-var sumCarac = &cumulCarac{
+var sumCarac = cumulCarac{
 	init: 0, cumulInt: addNumber[int64], cumulFloat: addNumber[float64],
 }
-var productCarac = &cumulCarac{
+var productCarac = cumulCarac{
 	init: 1, cumulInt: multNumber[int64], cumulFloat: multNumber[float64],
 }
 
@@ -62,7 +62,7 @@ func productFunc(env types.Environment, itArgs types.Iterator) types.Object {
 	return cumulFunc(env, itArgs, productCarac)
 }
 
-func cumulFunc(env types.Environment, itArgs types.Iterator, carac *cumulCarac) types.Object {
+func cumulFunc(env types.Environment, itArgs types.Iterator, carac cumulCarac) types.Object {
 	cumul := carac.init
 	cumulF := float64(cumul)
 	cumulInt := carac.cumulInt

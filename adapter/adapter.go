@@ -29,7 +29,7 @@ import (
 
 // match Render interface from gin.
 type IndentlangHTML struct {
-	Template *template.Template
+	Template template.Template
 	Data     any
 }
 
@@ -52,7 +52,7 @@ func (r IndentlangHTML) WriteContentType(w http.ResponseWriter) {
 
 // match HTMLRender interface from gin.
 type IndentlangHTMLRender struct {
-	Templates map[string]*template.Template
+	Templates map[string]template.Template
 }
 
 func (r IndentlangHTMLRender) Instance(name string, data any) render.Render {
@@ -72,7 +72,7 @@ func LoadTemplates(templatesPath string) IndentlangHTMLRender {
 
 	importDirective := builtins.MakeImportDirective(templatesPath)
 
-	templates := map[string]*template.Template{}
+	templates := map[string]template.Template{}
 	inSize := len(templatesPath)
 	err = filepath.WalkDir(templatesPath, func(path string, d fs.DirEntry, err error) error {
 		if err == nil && !d.IsDir() {

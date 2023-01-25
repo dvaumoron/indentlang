@@ -105,7 +105,7 @@ type LocalEnvironment struct {
 	parent Environment
 }
 
-func (l *LocalEnvironment) LoadStr(key string) (Object, bool) {
+func (l LocalEnvironment) LoadStr(key string) (Object, bool) {
 	res, ok := l.BaseEnvironment.LoadStr(key)
 	if ok {
 		return res, true
@@ -113,12 +113,12 @@ func (l *LocalEnvironment) LoadStr(key string) (Object, bool) {
 	return l.parent.LoadStr(key)
 }
 
-func (l *LocalEnvironment) Load(key Object) Object {
+func (l LocalEnvironment) Load(key Object) Object {
 	return Load(l, key)
 }
 
-func NewLocalEnvironment(env Environment) *LocalEnvironment {
-	return &LocalEnvironment{BaseEnvironment: MakeBaseEnvironment(), parent: env}
+func MakeLocalEnvironment(env Environment) LocalEnvironment {
+	return LocalEnvironment{BaseEnvironment: MakeBaseEnvironment(), parent: env}
 }
 
 type DataEnvironment struct {
@@ -126,7 +126,7 @@ type DataEnvironment struct {
 	Environment
 }
 
-func (d *DataEnvironment) LoadStr(key string) (Object, bool) {
+func (d DataEnvironment) LoadStr(key string) (Object, bool) {
 	res, ok := d.loadData(key)
 	if ok {
 		return res, true
@@ -134,11 +134,11 @@ func (d *DataEnvironment) LoadStr(key string) (Object, bool) {
 	return d.Environment.LoadStr(key)
 }
 
-func (d *DataEnvironment) Load(key Object) Object {
+func (d DataEnvironment) Load(key Object) Object {
 	return Load(d, key)
 }
 
-func NewDataEnvironment(data any, env Environment) *DataEnvironment {
+func MakeDataEnvironment(data any, env Environment) DataEnvironment {
 	loadConfirm := neverConfirm
 	dataValue, isNil := indirect(reflect.ValueOf(data))
 	if !isNil {
@@ -149,7 +149,7 @@ func NewDataEnvironment(data any, env Environment) *DataEnvironment {
 			loadConfirm = loadFromMap(dataValue)
 		}
 	}
-	return &DataEnvironment{loadData: loadConfirm, Environment: env}
+	return DataEnvironment{loadData: loadConfirm, Environment: env}
 }
 
 // Read only : all non Load* methods ore no-op.
@@ -158,7 +158,7 @@ type MergeEnvironment struct {
 	callEnv     Environment
 }
 
-func (m *MergeEnvironment) LoadStr(key string) (Object, bool) {
+func (m MergeEnvironment) LoadStr(key string) (Object, bool) {
 	res, ok := m.creationEnv.LoadStr(key)
 	if ok {
 		return res, true
@@ -166,25 +166,25 @@ func (m *MergeEnvironment) LoadStr(key string) (Object, bool) {
 	return m.callEnv.LoadStr(key)
 }
 
-func (m *MergeEnvironment) Load(key Object) Object {
+func (m MergeEnvironment) Load(key Object) Object {
 	return Load(m, key)
 }
 
-func (m *MergeEnvironment) Store(key, value Object) {
+func (m MergeEnvironment) Store(key, value Object) {
 }
 
-func (m *MergeEnvironment) StoreStr(key string, value Object) {
+func (m MergeEnvironment) StoreStr(key string, value Object) {
 }
 
-func (m *MergeEnvironment) Delete(key Object) {
+func (m MergeEnvironment) Delete(key Object) {
 }
 
-func (m *MergeEnvironment) DeleteStr(key string) {
+func (m MergeEnvironment) DeleteStr(key string) {
 }
 
-func (m *MergeEnvironment) CopyTo(other Environment) {
+func (m MergeEnvironment) CopyTo(other Environment) {
 }
 
-func NewMergeEnvironment(creationEnv, callEnv Environment) *MergeEnvironment {
-	return &MergeEnvironment{creationEnv: creationEnv, callEnv: callEnv}
+func MakeMergeEnvironment(creationEnv, callEnv Environment) MergeEnvironment {
+	return MergeEnvironment{creationEnv: creationEnv, callEnv: callEnv}
 }
