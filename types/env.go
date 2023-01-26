@@ -17,7 +17,10 @@
  */
 package types
 
-import "reflect"
+import (
+	"reflect"
+	"time"
+)
 
 type BaseEnvironment struct {
 	NoneType
@@ -96,11 +99,22 @@ func (it *chanIterator) Next() (Object, bool) {
 }
 
 func (it *chanIterator) Close() {
-	select {
-	case it.closeSender <- None:
-		close(it.closeSender)
-		it.closeSender = nil
-	default:
+	if it.closeSender != nil {
+		ticker := time.NewTicker(time.Microsecond)
+		for {
+			select {
+			case it.closeSender <- None:
+				close(it.closeSender)
+				it.closeSender = nil
+				ticker.Stop()
+				return
+			case <-ticker.C:
+				if it.closeSender == nil {
+					ticker.Stop()
+					return
+				}
+			}
+		}
 	}
 }
 
