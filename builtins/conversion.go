@@ -168,3 +168,12 @@ func dictFunc(env types.Environment, itArgs types.Iterator) types.Object {
 	})
 	return res
 }
+
+func xmlTagFunc(env types.Environment, itArgs types.Iterator) types.Object {
+	arg, _ := itArgs.Next()
+	str, _ := arg.(types.String)
+	if str == "" {
+		return types.None
+	}
+	return createXmlTag(string(str))
+}

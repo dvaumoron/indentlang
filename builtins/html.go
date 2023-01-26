@@ -30,11 +30,11 @@ const space types.String = " "
 const equalQuote types.String = "=\""
 const quote types.String = "\""
 
-func addHtmlElement(base types.BaseEnvironment, name string) {
-	base.StoreStr(name, CreateHtmlElement(name))
+func addXmlTag(base types.BaseEnvironment, name string) {
+	base.StoreStr(name, createXmlTag(name))
 }
 
-func CreateHtmlElement(name string) types.NativeAppliable {
+func createXmlTag(name string) types.NativeAppliable {
 	wrappedName := types.String(name)
 	return types.MakeNativeAppliable(func(env types.Environment, itArgs types.Iterator) types.Object {
 		attrs := types.NewList()
