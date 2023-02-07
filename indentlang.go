@@ -20,18 +20,36 @@ package main
 import (
 	"fmt"
 	"os"
-	"strconv"
 
 	"github.com/dvaumoron/indentlang/template"
+	"gopkg.in/yaml.v3"
 )
 
 func main() {
 	args := os.Args
+	if len(args) < 4 {
+		fmt.Println("Usage : indentlang file.il data.yaml outputFile")
+		return
+	}
 
 	tmplPath := args[1]
-	outPath := args[2]
+	dataPath := args[2]
+	outPath := args[3]
 
 	tmpl, err := template.ParsePath(tmplPath)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	dataBody, err := os.ReadFile(dataPath)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	tmplArgs := map[string]any{}
+	err = yaml.Unmarshal(dataBody, tmplArgs)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -43,13 +61,6 @@ func main() {
 		return
 	}
 	defer file.Close()
-
-	tmplArgs := map[string]any{}
-	values := args[3:]
-	tmplArgs["values"] = values
-	for i, value := range values {
-		tmplArgs["value"+strconv.Itoa(i+1)] = value
-	}
 
 	err = tmpl.Execute(file, tmplArgs)
 	if err != nil {

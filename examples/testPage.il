@@ -6,7 +6,7 @@ Import "main.il"
     Quote
         List
             ul
-                For ii (Range (Integer value5))
-                    := index (+ ii 1)
-                    li (a @href="/page?num=":ii "page num&eacute;ro " index)
+                For i (Range (Integer Number))
+                    := index (+ i 1)
+                    li (a @href="/page?num=":i "page num&eacute;ro " index)
             div (a @href="/otherPage" "Go there")

@@ -1,0 +1,9 @@
+Title: testPage (v1)
+UserName: Me
+Link: /logout
+LinkLabel: Logout
+Number: 5
+Footers:
+ - titi
+ - tutu
+ - tyty

@@ -1,18 +1,18 @@
 html
     head
         meta @charset="utf-8"
-        title "Title - " value1
+        title "Title - " Title
         link @rel="stylesheet" @type="text/css" @href="/static/main.css"
         script @type="text/javascript" @src="/static/main.js" ""
         WidgetHeader
     body
         header
-            h1 value1
+            h1 Title
             p
-                If value2 ("Welcome&nbsp;" value2 "&nbsp;")
-                a @href=value3 value4
+                If UserName ("Welcome&nbsp;" UserName "&nbsp;")
+                a @href=Link LinkLabel
         main
             Eval WidgetBody
         footer
-            For arg values
+            For arg Footers
                 p arg

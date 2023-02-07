@@ -1,0 +1,8 @@
+Title: testPage (v2)
+Link: /login
+LinkLabel: Login
+Number: 10
+Footers:
+ - toto
+ - tata
+ - tete

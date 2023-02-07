@@ -2,10 +2,10 @@
 
 testPage.html was generated with the command :
 
-    indentlang testPage.il testPage.html testPage Me /logout Logout 5
+    indentlang testPage.il testdata1.yaml testPage.html
 
 testPage2.html was generated with the command :
 
-    indentlang testPage.il testPage2.html testPage "" /login Login 5
+    indentlang testPage.il testdata2.yaml testPage2.html
 
-(the committed file have been cleaned)
+(the generated file have been cleaned before commit)
