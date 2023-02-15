@@ -20,6 +20,7 @@ package parser
 import (
 	"errors"
 	"strings"
+	"unicode"
 
 	"github.com/dvaumoron/indentlang/types"
 )
@@ -64,7 +65,7 @@ LineLoop:
 			index := 0
 			var char rune
 			for index, char = range line {
-				if char != ' ' && char != '\t' {
+				if !unicode.IsSpace(char) {
 					if top := indentStack.peek(); top < index {
 						indentStack.push(index)
 						manageOpen(listStack)
@@ -95,18 +96,18 @@ LineLoop:
 			go sendChar(chars, line[index:])
 			var buildingWord []rune
 			for char := range chars {
-				switch char {
-				case ' ', '\t':
+				switch {
+				case unicode.IsSpace(char):
 					buildingWord = sendReset(words, buildingWord)
-				case '(', ')':
+				case char == '(', char == ')':
 					buildingWord = sendReset(words, buildingWord)
 					words <- string(char)
-				case '"', '\'':
+				case char == '"', char == '\'':
 					buildingWord, err = readUntil(buildingWord, chars, char)
 					if err != nil {
 						break LineLoop
 					}
-				case '#':
+				case char == '#':
 					finishLine(words, buildingWord, done)
 					continue LineLoop
 				default:
