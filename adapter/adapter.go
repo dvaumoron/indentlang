@@ -28,12 +28,12 @@ import (
 )
 
 // match Render interface from gin.
-type IndentlangHTML struct {
+type indentlangHTML struct {
 	Template template.Template
 	Data     any
 }
 
-func (r IndentlangHTML) Render(w http.ResponseWriter) error {
+func (r indentlangHTML) Render(w http.ResponseWriter) error {
 	r.WriteContentType(w)
 	return r.Template.Execute(w, r.Data)
 }
@@ -43,7 +43,7 @@ const contentTypeName = "Content-Type"
 var htmlContentType = []string{"text/html; charset=utf-8"}
 
 // Writes HTML ContentType.
-func (r IndentlangHTML) WriteContentType(w http.ResponseWriter) {
+func (r indentlangHTML) WriteContentType(w http.ResponseWriter) {
 	header := w.Header()
 	if val := header[contentTypeName]; len(val) == 0 {
 		header[contentTypeName] = htmlContentType
@@ -51,19 +51,19 @@ func (r IndentlangHTML) WriteContentType(w http.ResponseWriter) {
 }
 
 // match HTMLRender interface from gin.
-type IndentlangHTMLRender struct {
+type indentlangHTMLRender struct {
 	Templates map[string]template.Template
 }
 
-func (r IndentlangHTMLRender) Instance(name string, data any) render.Render {
-	return IndentlangHTML{
+func (r indentlangHTMLRender) Instance(name string, data any) render.Render {
+	return indentlangHTML{
 		Template: r.Templates[name],
 		Data:     data,
 	}
 }
 
 // Use this method to init the HTMLRender in a gin Engine.
-func LoadTemplates(templatesPath string) IndentlangHTMLRender {
+func LoadTemplates(templatesPath string) render.HTMLRender {
 	templatesPath, err := filepath.Abs(templatesPath)
 	if err != nil {
 		panic(err)
@@ -86,5 +86,5 @@ func LoadTemplates(templatesPath string) IndentlangHTMLRender {
 	if err != nil {
 		panic(err)
 	}
-	return IndentlangHTMLRender{Templates: templates}
+	return indentlangHTMLRender{Templates: templates}
 }
