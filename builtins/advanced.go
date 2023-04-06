@@ -160,3 +160,7 @@ func parseWordFunc(env types.Environment, itArgs types.Iterator) types.Object {
 	}
 	return list.LoadInt(0) // None if the list is still empty
 }
+
+func getEnvFunc(env types.Environment, itArgs types.Iterator) types.Object {
+	return env
+}

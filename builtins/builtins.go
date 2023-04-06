@@ -217,6 +217,7 @@ func initBuitins() types.BaseEnvironment {
 	base.StoreStr("HasCategory", types.MakeNativeAppliable(hasCategoryFunc))
 	base.StoreStr("AddCustomRule", types.MakeNativeAppliable(addCustomRuleFunc))
 	base.StoreStr("ParseWord", types.MakeNativeAppliable(parseWordFunc))
+	base.StoreStr("GetEnv", types.MakeNativeAppliable(getEnvFunc))
 
 	// TODO init stuff
 	// lack of utilities (for string, iterator, function, ...)

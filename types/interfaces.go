@@ -33,6 +33,7 @@ type StringLoadable interface {
 }
 
 type Environment interface {
+	Object
 	Storable
 	Delete(Object)
 	StringLoadable

@@ -22,8 +22,7 @@ import "github.com/dvaumoron/indentlang/types"
 func ifForm(env types.Environment, itArgs types.Iterator) types.Object {
 	arg0, _ := itArgs.Next()
 	arg1, _ := itArgs.Next()
-	test := extractBoolean(arg0.Eval(env))
-	if test {
+	if extractBoolean(arg0.Eval(env)) {
 		return arg1.Eval(env)
 	}
 	arg2, _ := itArgs.Next()

@@ -195,6 +195,7 @@ func MakeDataEnvironment(data any, env Environment) DataEnvironment {
 
 // Read only : all non Load* methods ore no-op.
 type MergeEnvironment struct {
+	NoneType
 	creationEnv Environment
 	callEnv     Environment
 }
