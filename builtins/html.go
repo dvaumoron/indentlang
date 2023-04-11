@@ -83,7 +83,6 @@ func createXmlTag(name string) types.NativeAppliable {
 		} else {
 			res.Add(closeElement)
 			types.ForEach(childs, func(value types.Object) bool {
-				res.Add(space)
 				res.Add(value)
 				return true
 			})
