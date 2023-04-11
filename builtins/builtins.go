@@ -33,6 +33,7 @@ func initBuitins() types.BaseEnvironment {
 	// special case in order to create Main,
 	// which will be called by the Execute method of the Template struct
 	base.StoreStr("html", types.MakeNativeAppliable(func(env types.Environment, itArgs types.Iterator) types.Object {
+		// avoid loss in multiple call case
 		savedArgs := types.NewList().AddAll(itArgs)
 		env.StoreStr(MainName, types.MakeNativeAppliable(func(callEnv types.Environment, emptyArgs types.Iterator) types.Object {
 			return elementHtml.Apply(callEnv, savedArgs)
