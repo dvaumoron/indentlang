@@ -77,7 +77,7 @@ func LoadTemplates(templatesPath string) render.HTMLRender {
 	err = filepath.WalkDir(templatesPath, func(path string, d fs.DirEntry, err error) error {
 		if err == nil && !d.IsDir() {
 			if name := path[inSize:]; name[len(name)-3:] == ".il" {
-				templates[name] = template.ParseWithImport(importDirective, path)
+				templates[name] = template.ParseWithImport(importDirective, name)
 			}
 		}
 		return err
