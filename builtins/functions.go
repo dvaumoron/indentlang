@@ -136,33 +136,26 @@ func (u userAppliable) Apply(callEnv types.Environment, args types.Iterable) (re
 	itArgs := args.Iter()
 	defer itArgs.Close()
 	u.retrieveArgs(callEnv, local, itArgs)
-	defer func() {
-		if r := recover(); r != nil {
-			if _, ok := r.(returnMarker); !ok {
-				panic(r)
-			}
-			res = u.evalReturn(callEnv, local)
-		}
-	}()
+	defer u.manageReturn(callEnv, local, &res)
 	evalBody(u.body, local)
 	return types.None
 }
 
+func (u userAppliable) manageReturn(callEnv types.Environment, local types.Environment, res *types.Object) {
+	if r := recover(); r != nil {
+		if _, ok := r.(returnMarker); !ok {
+			panic(r)
+		}
+		*res = u.evalReturn(callEnv, local)
+	}
+}
+
 func (u userAppliable) ApplyWithData(data any, callEnv types.Environment, args types.Iterable) (res types.Object) {
-	local := u.initEnv(types.MakeMergeEnvironment(
-		types.MakeDataEnvironment(data, u.creationEnv), callEnv,
-	))
+	local := u.initEnv(types.MakeMergeEnvironment(types.MakeDataEnvironment(data, u.creationEnv), callEnv))
 	itArgs := args.Iter()
 	defer itArgs.Close()
 	u.retrieveArgs(callEnv, local, itArgs)
-	defer func() {
-		if r := recover(); r != nil {
-			if _, ok := r.(returnMarker); !ok {
-				panic(r)
-			}
-			res = u.evalReturn(callEnv, local)
-		}
-	}()
+	defer u.manageReturn(callEnv, local, &res)
 	evalBody(u.body, local)
 	return types.None
 }
@@ -170,14 +163,7 @@ func (u userAppliable) ApplyWithData(data any, callEnv types.Environment, args t
 func (u userAppliable) defaultApply(callEnv types.Environment, itArgs types.Iterator) (res types.Object) {
 	local := u.initEnv(u.creationEnv)
 	u.defaultRetrieveArgs(callEnv, local, itArgs)
-	defer func() {
-		if r := recover(); r != nil {
-			if _, ok := r.(returnMarker); !ok {
-				panic(r)
-			}
-			res = u.evalReturn(callEnv, local)
-		}
-	}()
+	defer u.manageReturn(callEnv, local, &res)
 	evalBody(u.body, local)
 	return types.None
 }
