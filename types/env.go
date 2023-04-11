@@ -101,16 +101,15 @@ func (it *chanIterator) Next() (Object, bool) {
 func (it *chanIterator) Close() {
 	if it.closeSender != nil {
 		ticker := time.NewTicker(time.Microsecond)
+		defer ticker.Stop()
 		for {
 			select {
 			case it.closeSender <- None:
 				close(it.closeSender)
 				it.closeSender = nil
-				ticker.Stop()
 				return
 			case <-ticker.C:
 				if it.closeSender == nil {
-					ticker.Stop()
 					return
 				}
 			}
