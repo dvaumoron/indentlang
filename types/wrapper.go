@@ -18,8 +18,8 @@
 package types
 
 import (
-	"fmt"
 	"reflect"
+	"strconv"
 )
 
 type ConvertString func(string) (Object, bool)
@@ -51,7 +51,7 @@ func loadFromStruct(value reflect.Value) ConvertString {
 	}
 }
 
-type StructIterator struct {
+type structIterator struct {
 	NoneType
 	innerStruct reflect.Value
 	innerType   reflect.Type
@@ -59,11 +59,11 @@ type StructIterator struct {
 	end         int64
 }
 
-func (it *StructIterator) Iter() Iterator {
+func (it *structIterator) Iter() Iterator {
 	return it
 }
 
-func (it *StructIterator) Next() (Object, bool) {
+func (it *structIterator) Next() (Object, bool) {
 	var res Object = None
 	ok := it.current < it.end
 	if ok {
@@ -76,14 +76,14 @@ func (it *StructIterator) Next() (Object, bool) {
 	return res, ok
 }
 
-func (it *StructIterator) Close() {
+func (it *structIterator) Close() {
 	it.innerStruct = reflect.Value{}
 	it.innerType = nil
 }
 
 func iterFromStruct(value reflect.Value) ExtractIterator {
 	return func() Iterator {
-		return &StructIterator{innerStruct: value, innerType: value.Type(), end: int64(value.NumField())}
+		return &structIterator{innerStruct: value, innerType: value.Type(), end: int64(value.NumField())}
 	}
 }
 
@@ -100,17 +100,17 @@ func loadFromMap(value reflect.Value) ConvertString {
 	}
 }
 
-type MapIterWrapper struct {
+type mapIterWrapper struct {
 	NoneType
 	inner     *reflect.MapIter
 	exhausted bool
 }
 
-func (w *MapIterWrapper) Iter() Iterator {
+func (w *mapIterWrapper) Iter() Iterator {
 	return w
 }
 
-func (w *MapIterWrapper) Next() (Object, bool) {
+func (w *mapIterWrapper) Next() (Object, bool) {
 	if !w.exhausted {
 		if w.inner.Next() {
 			return NewList(valueToObject(w.inner.Key()), valueToObject(w.inner.Value())), true
@@ -121,31 +121,31 @@ func (w *MapIterWrapper) Next() (Object, bool) {
 	return None, false
 }
 
-func (w *MapIterWrapper) Close() {
+func (w *mapIterWrapper) Close() {
 	w.inner.Reset(reflect.Value{})
 }
 
 func iterFromMap(value reflect.Value) ExtractIterator {
 	return func() Iterator {
-		return &MapIterWrapper{inner: value.MapRange()}
+		return &mapIterWrapper{inner: value.MapRange()}
 	}
 }
 
-type LoadWrapper struct {
+type dataWrapper struct {
 	NoneType
 	loadData ConvertString
 	iterData ExtractIterator
 }
 
-func (w LoadWrapper) Load(key Object) Object {
+func (w dataWrapper) Load(key Object) Object {
 	return Load(w, key)
 }
 
-func (w LoadWrapper) LoadStr(s string) (Object, bool) {
+func (w dataWrapper) LoadStr(s string) (Object, bool) {
 	return w.loadData(s)
 }
 
-func (w LoadWrapper) Iter() Iterator {
+func (w dataWrapper) Iter() Iterator {
 	return w.iterData()
 }
 
@@ -162,7 +162,7 @@ func valueToObject(value reflect.Value) Object {
 		case reflect.Float32, reflect.Float64:
 			return Float(value.Float())
 		case reflect.Complex64, reflect.Complex128:
-			return String(fmt.Sprint(value.Complex()))
+			return String(strconv.FormatComplex(value.Complex(), 'g', -1, 128))
 		case reflect.String:
 			return String(value.String())
 		case reflect.Array, reflect.Slice:
@@ -173,9 +173,9 @@ func valueToObject(value reflect.Value) Object {
 			}
 			return l
 		case reflect.Struct:
-			return LoadWrapper{loadData: loadFromStruct(value), iterData: iterFromStruct(value)}
+			return dataWrapper{loadData: loadFromStruct(value), iterData: iterFromStruct(value)}
 		case reflect.Map:
-			return LoadWrapper{loadData: loadFromMap(value), iterData: iterFromMap(value)}
+			return dataWrapper{loadData: loadFromMap(value), iterData: iterFromMap(value)}
 		}
 	}
 	return None

@@ -201,7 +201,7 @@ func initBuitins() types.BaseEnvironment {
 	base.StoreStr("Add", types.MakeNativeAppliable(addFunc))
 	base.StoreStr("AddAll", types.MakeNativeAppliable(addAllFunc))
 
-	// some function to do math
+	// some functions to do math
 	base.StoreStr(sumName, types.MakeNativeAppliable(sumFunc))
 	base.StoreStr(minusName, types.MakeNativeAppliable(minusFunc))
 	base.StoreStr(productName, types.MakeNativeAppliable(productFunc))
@@ -226,8 +226,13 @@ func initBuitins() types.BaseEnvironment {
 	base.StoreStr("ParseWord", types.MakeNativeAppliable(parseWordFunc))
 	base.StoreStr("GetEnv", types.MakeNativeAppliable(getEnvFunc))
 
+	// escape functions
+	base.StoreStr("EscapeHtml", types.MakeNativeAppliable(escapeHtmlFunc))
+	base.StoreStr("EscapeQuery", types.MakeNativeAppliable(escapeQueryFunc))
+	base.StoreStr("EscapePath", types.MakeNativeAppliable(escapePathFunc))
+
 	// TODO init stuff
-	// lack of utilities (for string, iterator, function, ...)
+	// lack of utilities (for iterator, function, ...)
 
 	// give parser package a protected copy to use in user custom rules
 	parser.BuiltinsCopy = types.MakeLocalEnvironment(base)

@@ -18,7 +18,6 @@
 package builtins
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 
@@ -116,9 +115,9 @@ func extractString(o types.Object) string {
 		}
 		return "false"
 	case types.Integer:
-		return fmt.Sprint(int64(casted))
+		return strconv.FormatInt(int64(casted), 10)
 	case types.Float:
-		return fmt.Sprint(float64(casted))
+		return strconv.FormatFloat(float64(casted), 'g', -1, 64)
 	case types.String:
 		return string(casted)
 	case types.Iterable:
