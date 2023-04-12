@@ -23,6 +23,7 @@ import (
 )
 
 type ConvertString func(string) (Object, bool)
+type ExtractIterator func() Iterator
 
 var stringType = reflect.TypeOf("")
 
@@ -50,6 +51,42 @@ func loadFromStruct(value reflect.Value) ConvertString {
 	}
 }
 
+type StructIterator struct {
+	NoneType
+	innerStruct reflect.Value
+	innerType   reflect.Type
+	current     int64
+	end         int64
+}
+
+func (it *StructIterator) Iter() Iterator {
+	return it
+}
+
+func (it *StructIterator) Next() (Object, bool) {
+	var res Object = None
+	ok := it.current < it.end
+	if ok {
+		current := int(it.current)
+		name := it.innerType.Field(current).Name
+		field := it.innerStruct.Field(current)
+		res = NewList(String(name), valueToObject(field))
+		it.current++
+	}
+	return res, ok
+}
+
+func (it *StructIterator) Close() {
+	it.innerStruct = reflect.Value{}
+	it.innerType = nil
+}
+
+func iterFromStruct(value reflect.Value) ExtractIterator {
+	return func() Iterator {
+		return &StructIterator{innerStruct: value, innerType: value.Type(), end: int64(value.NumField())}
+	}
+}
+
 func loadFromMap(value reflect.Value) ConvertString {
 	if !stringType.AssignableTo(value.Type().Key()) {
 		return neverConfirm
@@ -63,9 +100,41 @@ func loadFromMap(value reflect.Value) ConvertString {
 	}
 }
 
+type MapIterWrapper struct {
+	NoneType
+	inner     *reflect.MapIter
+	exhausted bool
+}
+
+func (w *MapIterWrapper) Iter() Iterator {
+	return w
+}
+
+func (w *MapIterWrapper) Next() (Object, bool) {
+	if !w.exhausted {
+		if w.inner.Next() {
+			return NewList(valueToObject(w.inner.Key()), valueToObject(w.inner.Value())), true
+		} else {
+			w.exhausted = true
+		}
+	}
+	return None, false
+}
+
+func (w *MapIterWrapper) Close() {
+	w.inner.Reset(reflect.Value{})
+}
+
+func iterFromMap(value reflect.Value) ExtractIterator {
+	return func() Iterator {
+		return &MapIterWrapper{inner: value.MapRange()}
+	}
+}
+
 type LoadWrapper struct {
 	NoneType
 	loadData ConvertString
+	iterData ExtractIterator
 }
 
 func (w LoadWrapper) Load(key Object) Object {
@@ -74,6 +143,10 @@ func (w LoadWrapper) Load(key Object) Object {
 
 func (w LoadWrapper) LoadStr(s string) (Object, bool) {
 	return w.loadData(s)
+}
+
+func (w LoadWrapper) Iter() Iterator {
+	return w.iterData()
 }
 
 func valueToObject(value reflect.Value) Object {
@@ -100,9 +173,9 @@ func valueToObject(value reflect.Value) Object {
 			}
 			return l
 		case reflect.Struct:
-			return LoadWrapper{loadData: loadFromStruct(value)}
+			return LoadWrapper{loadData: loadFromStruct(value), iterData: iterFromStruct(value)}
 		case reflect.Map:
-			return LoadWrapper{loadData: loadFromMap(value)}
+			return LoadWrapper{loadData: loadFromMap(value), iterData: iterFromMap(value)}
 		}
 	}
 	return None
