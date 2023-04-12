@@ -170,7 +170,7 @@ func dictFunc(env types.Environment, itArgs types.Iterator) types.Object {
 
 func xmlTagFunc(env types.Environment, itArgs types.Iterator) types.Object {
 	arg, _ := itArgs.Next()
-	str, _ := arg.(types.String)
+	str, _ := arg.Eval(env).(types.String)
 	if str == "" {
 		return types.None
 	}

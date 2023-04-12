@@ -38,7 +38,7 @@ func escapePathFunc(env types.Environment, itArgs types.Iterator) types.Object {
 
 func escapingFunc(env types.Environment, itArgs types.Iterator, escapeFunction func(string) string) types.Object {
 	arg, _ := itArgs.Next()
-	str, _ := arg.(types.String)
+	str, _ := arg.Eval(env).(types.String)
 	if str == "" {
 		return types.None
 	}
