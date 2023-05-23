@@ -19,57 +19,11 @@ package adapter
 
 import (
 	"io/fs"
-	"net/http"
 	"path/filepath"
 
 	"github.com/dvaumoron/indentlang/builtins"
 	"github.com/dvaumoron/indentlang/template"
-	"github.com/gin-gonic/gin/render"
 )
-
-// match Render interface from gin.
-type indentlangHTML struct {
-	Template template.Template
-	Data     any
-}
-
-func (r indentlangHTML) Render(w http.ResponseWriter) error {
-	r.WriteContentType(w)
-	return r.Template.Execute(w, r.Data)
-}
-
-const contentTypeName = "Content-Type"
-
-var htmlContentType = []string{"text/html; charset=utf-8"}
-
-// Writes HTML ContentType.
-func (r indentlangHTML) WriteContentType(w http.ResponseWriter) {
-	header := w.Header()
-	if val := header[contentTypeName]; len(val) == 0 {
-		header[contentTypeName] = htmlContentType
-	}
-}
-
-// match HTMLRender interface from gin.
-type indentlangHTMLRender struct {
-	Templates map[string]template.Template
-}
-
-func (r indentlangHTMLRender) Instance(name string, data any) render.Render {
-	return indentlangHTML{
-		Template: r.Templates[name],
-		Data:     data,
-	}
-}
-
-// Use this method to init the HTMLRender in a gin Engine.
-func LoadTemplatesAsRender(templatesPath string) (render.HTMLRender, error) {
-	templates, err := LoadTemplates(templatesPath)
-	if err != nil {
-		return nil, err
-	}
-	return indentlangHTMLRender{Templates: templates}, nil
-}
 
 func LoadTemplates(templatesPath string) (map[string]template.Template, error) {
 	templatesPath, err := filepath.Abs(templatesPath)
