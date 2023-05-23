@@ -63,7 +63,15 @@ func (r indentlangHTMLRender) Instance(name string, data any) render.Render {
 }
 
 // Use this method to init the HTMLRender in a gin Engine.
-func LoadTemplates(templatesPath string) (render.HTMLRender, error) {
+func LoadTemplatesAsRender(templatesPath string) (render.HTMLRender, error) {
+	templates, err := LoadTemplates(templatesPath)
+	if err != nil {
+		return nil, err
+	}
+	return indentlangHTMLRender{Templates: templates}, nil
+}
+
+func LoadTemplates(templatesPath string) (map[string]template.Template, error) {
 	templatesPath, err := filepath.Abs(templatesPath)
 	if err != nil {
 		return nil, err
@@ -86,5 +94,5 @@ func LoadTemplates(templatesPath string) (render.HTMLRender, error) {
 	if err != nil {
 		return nil, err
 	}
-	return indentlangHTMLRender{Templates: templates}, nil
+	return templates, nil
 }
