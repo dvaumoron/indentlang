@@ -25,6 +25,9 @@ import (
 	"github.com/dvaumoron/indentlang/types"
 )
 
+const defaultExt = ".il"
+const defaultExtLen = len(defaultExt)
+
 type importRequest struct {
 	basePath  string
 	filePath  string
@@ -93,7 +96,7 @@ func importer(requestReceiver <-chan importRequest, responseReceiver <-chan impo
 
 const ImportName = "Import"
 
-func innerImporter(basePath, totalPath string) {
+func innerImporter(basePath string, totalPath string) {
 	env := types.MakeLocalEnvironment(Builtins)
 	env.StoreStr(ImportName, makeCheckedImportDirective(basePath))
 	// nested environment to isolate the directive Import, this avoid copying
@@ -133,6 +136,10 @@ func makeCheckedImportDirective(basePath string) types.NativeAppliable {
 				arg0, _ := itArgs.Next()
 				filePath, ok := arg0.Eval(env).(types.String)
 				if ok {
+					if end := len(filePath) - defaultExtLen; filePath[end:] != defaultExt {
+						filePath = filePath + defaultExt
+					}
+
 					response := make(chan types.Environment)
 					requestToImporter <- importRequest{
 						basePath: basePath, filePath: string(filePath), responder: response,

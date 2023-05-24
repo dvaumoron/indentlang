@@ -1,4 +1,4 @@
-Import "main.il"
+Import "main"
 
 := WidgetHeader (script @type="text/javascript" @src="/static/test.js" "") # the empty string avoid self-closing
 

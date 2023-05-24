@@ -57,6 +57,7 @@ func ParsePath(path string) (Template, error) {
 	return ParseWithImport(builtins.MakeImportDirective(basePath), fileName), nil
 }
 
+// if the file extension is missing, will add .il
 func ParseWithImport(importDirective types.Appliable, filePath string) Template {
 	env := types.MakeLocalEnvironment(builtins.Builtins)
 	env.StoreStr(builtins.ImportName, importDirective)
