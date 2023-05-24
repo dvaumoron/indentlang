@@ -39,7 +39,7 @@ func LoadTemplates(templatesPath string) (map[string]template.Template, error) {
 	err = filepath.WalkDir(templatesPath, func(path string, d fs.DirEntry, err error) error {
 		if err == nil && !d.IsDir() {
 			name := path[inSize:]
-			if end := len(name) - 3; name[end:] == ".il" {
+			if end := len(name) - builtins.DefaultExtLen; name[end:] == builtins.DefaultExt {
 				templates[name[:end]] = template.ParseWithImport(importDirective, name)
 			}
 		}

@@ -25,8 +25,8 @@ import (
 	"github.com/dvaumoron/indentlang/types"
 )
 
-const defaultExt = ".il"
-const defaultExtLen = len(defaultExt)
+const DefaultExt = ".il"
+const DefaultExtLen = len(DefaultExt)
 
 type importRequest struct {
 	basePath  string
@@ -136,8 +136,8 @@ func makeCheckedImportDirective(basePath string) types.NativeAppliable {
 				arg0, _ := itArgs.Next()
 				filePath, ok := arg0.Eval(env).(types.String)
 				if ok {
-					if end := len(filePath) - defaultExtLen; filePath[end:] != defaultExt {
-						filePath = filePath + defaultExt
+					if end := len(filePath) - DefaultExtLen; filePath[end:] != DefaultExt {
+						filePath = filePath + DefaultExt
 					}
 
 					response := make(chan types.Environment)
