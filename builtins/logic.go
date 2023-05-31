@@ -15,6 +15,7 @@
  * limitations under the License.
  *
  */
+
 package builtins
 
 import "github.com/dvaumoron/indentlang/types"
