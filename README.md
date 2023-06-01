@@ -47,4 +47,4 @@ The output will look like (cleaned):
 
 The file [indentlang.go](indentlang.go) is an adapted copy of [engine.go](https://github.com/dvaumoron/ste/blob/master/engine.go) for demo and testing purpose (see [examples](examples)).
 
-See [API Documentation](https://pkg.go.dev/github.com/dvaumoron/indentlanf/template).
+See [API Documentation](https://pkg.go.dev/github.com/dvaumoron/indentlang/template).
