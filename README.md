@@ -4,8 +4,15 @@ A templating language mainly to output balised language (html, xml, etc.).
 
 ## usage
 
+Start by importing the template package : 
+
 ```
-// need import "github.com/dvaumoron/indentlang/template"
+import "github.com/dvaumoron/indentlang/template"
+```
+
+And use it in two step:
+
+```
 // parse a template
 tmpl, err := template.ParsePath(tmplPath)
 // and use it
@@ -39,3 +46,5 @@ The output will look like (cleaned):
 ```
 
 The file [indentlang.go](indentlang.go) is an adapted copy of [engine.go](https://github.com/dvaumoron/ste/blob/master/engine.go) for demo and testing purpose (see [examples](examples)).
+
+See [API Documentation](https://pkg.go.dev/github.com/dvaumoron/indentlanf/template).
