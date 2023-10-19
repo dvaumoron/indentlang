@@ -1,18 +1,18 @@
 # IndentLang
 
-A templating language mainly to output balised language (html, xml, etc.). 
+A templating language mainly to output balised language (html, xml, etc.).
 
 ## usage
 
-Start by importing the template package : 
+Start by importing the template package :
 
-```
+```Go
 import "github.com/dvaumoron/indentlang/template"
 ```
 
 And use it in two step:
 
-```
+```Go
 // parse a template
 tmpl, err := template.ParsePath(tmplPath)
 // and use it
