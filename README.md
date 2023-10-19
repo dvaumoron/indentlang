@@ -33,7 +33,7 @@ html
 
 The output will look like (cleaned):
 
-```
+```html
 <html>
     <head>
         <meta charset="utf-8"/>
