@@ -1,4 +1,4 @@
-# indentlang examples
+# IndentLang examples
 
 testPage.html was generated with the command :
 
