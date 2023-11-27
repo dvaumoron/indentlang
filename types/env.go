@@ -20,7 +20,7 @@ package types
 
 import (
 	"reflect"
-	"time"
+	"sync"
 )
 
 type BaseEnvironment struct {
@@ -80,17 +80,18 @@ func (b BaseEnvironment) CopyTo(other Environment) {
 func (b BaseEnvironment) Size() int {
 	return len(b.objects)
 }
+
 func (b BaseEnvironment) Iter() Iterator {
-	objectChannel := make(chan Object)
-	it := &chanIterator{channel: objectChannel}
+	it := &chanIterator{channel: make(chan Object), done: make(chan NoneType)}
 	go it.sendMapValue(b.objects)
 	return it
 }
 
 type chanIterator struct {
 	NoneType
-	channel   chan Object
-	cancelled bool
+	channel chan Object
+	done    chan NoneType
+	once    sync.Once
 }
 
 func (it *chanIterator) Iter() Iterator {
@@ -106,21 +107,18 @@ func (it *chanIterator) Next() (Object, bool) {
 }
 
 func (it *chanIterator) Close() {
-	it.cancelled = true
+	it.once.Do(func() {
+		close(it.done)
+	})
 }
 
 func (it *chanIterator) sendMapValue(objects map[string]Object) {
-	ticker := time.NewTicker(time.Millisecond)
-	defer ticker.Stop()
-
 ForLoop:
 	for key, value := range objects {
 		select {
 		case it.channel <- NewList(String(key), value):
-		case <-ticker.C:
-			if it.cancelled {
-				break ForLoop
-			}
+		case <-it.done:
+			break ForLoop
 		}
 	}
 	close(it.channel)
